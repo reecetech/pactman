@@ -225,3 +225,32 @@ def get_generated_values(input):
         return input.generate()['data']['generate']
     else:
         raise ValueError('Unknown type: %s' % type(input))
+
+
+def get_matching_rules(input, path):
+    if input is None or isinstance(input, (six.string_types, int, float, bool)):
+        return {}
+    if isinstance(input, dict):
+        rules = {}
+        for k, v in input.items():
+            sub_path = path + '.' + k
+            rules.update(get_matching_rules(v, sub_path))
+        return rules
+    if isinstance(input, list):
+        rules = {}
+        for i, v in enumerate(input):
+            sub_path = f'{path}[*]'
+            rules.update(get_matching_rules(v, sub_path))
+        return rules
+    elif isinstance(input, Like):
+        rules = {path: {'matchers': [{'match': 'type'}]}}
+        rules.update(get_matching_rules(input.matcher, path))
+        return rules
+    elif isinstance(input, EachLike):
+        rules = {path: {'matchers': [{'match': 'type', 'min': input.minimum}]}}
+        rules.update(get_matching_rules(input.matcher, path))
+        return rules
+    elif isinstance(input, Term):
+        return {path: {'matchers': [{'match': 'regex', 'regex': input.matcher}]}}
+    else:
+        raise ValueError('Unknown type: %s' % type(input))

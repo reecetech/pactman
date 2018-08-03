@@ -10,8 +10,9 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3 import Retry
 
+from pact.mock_server import getServer
 from .constants import MOCK_SERVICE_PATH
-from .matchers import from_term
+from .matchers import from_term, get_generated_values, get_matching_rules
 
 
 class Pact(object):
@@ -38,6 +39,7 @@ class Pact(object):
 
     HEADERS = {'X-Pact-Mock-Service': 'true'}
 
+    # TODO: do something about version...
     def __init__(self, consumer, provider, host_name='localhost', port=1234,
                  log_dir=None, ssl=False, sslcert=None, sslkey=None,
                  cors=False, pact_dir=None, version='2.0.0',
@@ -100,7 +102,7 @@ class Pact(object):
         self.sslkey = sslkey
         self.version = version
         self._interactions = []
-        self._process = None
+        self._server = None
 
     def given(self, provider_state):
         """
@@ -118,69 +120,14 @@ class Pact(object):
         return self
 
     def setup(self):
-        """Configure the Mock Service to ready it for a test."""
-        try:
-            resp = requests.delete(
-                self.uri + '/interactions', headers=self.HEADERS)
-
-            assert resp.status_code == 200, resp.text
-            resp = requests.put(
-                self.uri + '/interactions',
-                headers=self.HEADERS,
-                json={"interactions": self._interactions})
-
-            assert resp.status_code == 200, resp.text
-        except AssertionError:
-            raise
+        self._server.setup(self._interactions)
 
     def start_service(self):
-        """
-        Start the external Mock Service.
-
-        :raises RuntimeError: if there is a problem starting the mock service.
-        """
-        command = [
-            MOCK_SERVICE_PATH,
-            'service',
-            '--host={}'.format(self.host_name),
-            '--port={}'.format(self.port),
-            '--log', '{}/pact-mock-service.log'.format(self.log_dir),
-            '--pact-dir', self.pact_dir,
-            '--pact-file-write-mode', self.file_write_mode,
-            '--pact-specification-version={}'.format(self.version),
-            '--consumer', self.consumer.name,
-            '--provider', self.provider.name]
-
-        if self.ssl:
-            command.append('--ssl')
-        if self.sslcert:
-            command.extend(['--sslcert', self.sslcert])
-        if self.sslkey:
-            command.extend(['--sslkey', self.sslkey])
-
-        self._process = Popen(command)
-        self._wait_for_server_start()
+        self._server = getServer(self.consumer.name, self.provider.name, self.log_dir, self.pact_dir)
+        self.port = self._server.config.port
 
     def stop_service(self):
-        """Stop the external Mock Service."""
-        is_windows = 'windows' in platform.platform().lower()
-        if is_windows:
-            # Send the signal to ruby.exe, not the *.bat process
-            p = psutil.Process(self._process.pid)
-            for child in p.children(recursive=True):
-                child.terminate()
-            p.wait()
-            if psutil.pid_exists(self._process.pid):
-                raise RuntimeError(
-                    'There was an error when stopping the Pact mock service.')
-
-        else:
-            self._process.terminate()
-
-            self._process.communicate()
-            if self._process.returncode != 0:
-                raise RuntimeError(
-                    'There was an error when stopping the Pact mock service.')
+        self._server.terminate()
 
     def upon_receiving(self, scenario):
         """
@@ -202,14 +149,11 @@ class Pact(object):
 
         :raises AssertionError: When not all interactions are found.
         """
-        self._interactions = []
-        resp = requests.get(
-            self.uri + '/interactions/verification',
-            headers=self.HEADERS)
-        assert resp.status_code == 200, resp.text
-        resp = requests.post(
-            self.uri + '/pact', headers=self.HEADERS)
-        assert resp.status_code == 200, resp.text
+        try:
+            self._server.verify()
+        finally:
+            # clear the interactions once we've attempted to verify, allowing re-use of the server
+            self._interactions[:] = []
 
     def with_request(self, method, path, body=None, headers=None, query=None):
         """
@@ -252,23 +196,6 @@ class Pact(object):
                                                      headers=headers,
                                                      body=body).json()
         return self
-
-    def _wait_for_server_start(self):
-        """
-        Wait for the mock service to be ready for requests.
-
-        :rtype: None
-        :raises RuntimeError: If there is a problem starting the mock service.
-        """
-        s = requests.Session()
-        retries = Retry(total=9, backoff_factor=0.1)
-        s.mount('http://', HTTPAdapter(max_retries=retries))
-        resp = s.get(self.uri, headers=self.HEADERS)
-        if resp.status_code != 200:
-            self._process.terminate()
-            self._process.communicate()
-            raise RuntimeError(
-                'There was a problem starting the mock service: %s', resp.text)
 
     def __enter__(self):
         """
@@ -318,10 +245,27 @@ class Request(FromTerms):
         :type query: str or dict
         """
         self.method = method
-        self.path = from_term(path)
-        self.body = from_term(body)
-        self.headers = from_term(headers)
-        self.query = from_term(query)
+
+        # example set
+        self.path = get_generated_values(path)
+        self.body = get_generated_values(body)
+        self.headers = get_generated_values(headers)
+        self.query = get_generated_values(query)
+
+        # matchingRules
+        # TODO: currently only generates pact v3
+        self.matchingRules = {}
+        self.matchingRules.update(get_matching_rules(path, 'path'))
+        self.matchingRules.update(get_matching_rules(headers, 'headers'))
+
+        # body and query rules look different
+        body_rules = get_matching_rules(body, '$.body')
+        if body_rules:
+            self.matchingRules['body'] = body_rules
+
+        query_rules = get_matching_rules(query, '$.query')
+        if query_rules:
+            self.matchingRules['query'] = {'Q1': query_rules['$.query']}
 
     def json(self):
         """Convert the Request to a JSON version for the mock service."""
@@ -335,6 +279,9 @@ class Request(FromTerms):
 
         if self.query:
             request['query'] = self.query
+
+        if self.matchingRules:
+            request['matchingRules'] = self.matchingRules
 
         return request
 
@@ -354,8 +301,16 @@ class Response(FromTerms):
         :type body: str, dict, or list
         """
         self.status = status
-        self.body = from_term(body)
-        self.headers = from_term(headers)
+
+        # example set
+        self.body = get_generated_values(body)
+        self.headers = get_generated_values(headers)
+
+        # matchingRules
+        # TODO: currently only generates pact v3
+        self.matchingRules = {}
+        self.matchingRules.update(get_matching_rules(body, '$.body'))
+        self.matchingRules.update(get_matching_rules(headers, '$.headers'))
 
     def json(self):
         """Convert the Response to a JSON version for the mock service."""
@@ -365,5 +320,8 @@ class Response(FromTerms):
 
         if self.headers:
             response['headers'] = self.headers
+
+        if self.matchingRules:
+            response['matchingRules'] = self.matchingRules
 
         return response
