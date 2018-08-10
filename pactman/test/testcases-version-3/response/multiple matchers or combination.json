@@ -1,0 +1,37 @@
+{
+  "match": true,
+  "comment": "Messages match a fallback matcher regex",
+  "expected": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "name": "alligator"
+    },
+    "matchingRules": {
+      "body": {
+        "$.name": {
+          "matchers": [
+            {
+              "match": "regex",
+              "regex": "ham"
+            },
+            {
+              "match": "regex",
+              "regex": "spam"
+            }
+          ],
+          "combine": "OR"
+        }
+      }
+    }
+  },
+  "actual": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "name": "spam"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "match": false,
+  "comment": "Mismatched type in nested object",
+  "expected": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "a": [
+        {"name": 2},
+        {"name": 1}
+      ]
+    },
+    "matchingRules": {
+      "body": {
+        "$.a[*].name": {
+          "match": "type"
+        }
+      }
+    }
+  },
+  "actual": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "a": [
+        {
+          "name": 10
+        },
+        {
+          "name": "spam"
+        }
+      ]
+    }
+  }
+}

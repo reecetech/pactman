@@ -1,0 +1,27 @@
+{
+  "match": false,
+  "comment": "Mismatched type",
+  "expected": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "name": 2
+    },
+    "matchingRules": {
+      "body": {
+        "$.name": {
+          "match": "type"
+        }
+      }
+    }
+  },
+  "actual": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "name": "spam"
+    }
+  }
+}

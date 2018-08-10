@@ -1,0 +1,11 @@
+{
+            "provider": {"name": "SpamProvider"},
+            "consumer": {"name": "SpamConsumer"},
+            "interactions": [{
+                "description": "dummy",
+                "request": {"method": "GET", "path": "/users-service/user/alex"},
+                "response": {"headers": {}, "status": 200}
+            }],
+            "metadata": {"pactSpecification": {"version": "2.0.0"}
+            }
+}

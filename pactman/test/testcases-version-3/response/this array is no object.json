@@ -1,0 +1,25 @@
+{
+  "match": false,
+  "comment": "Expected an object to apply rule, found an array",
+  "expected": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "name": 2
+    },
+    "matchingRules": {
+      "body": {
+        "$.name": {
+          "match": "type"
+        }
+      }
+    }
+  },
+  "actual": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": [1]
+  }
+}

@@ -1,7 +1,3 @@
-# pact-python specific ignores
-e2e/pacts
-pact/bin
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -48,6 +44,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+.pytest_cache
 
 # Translations
 *.mo

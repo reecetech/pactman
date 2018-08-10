@@ -1,0 +1,14 @@
+{
+  "match": false,
+  "comment": "Headers values are different",
+  "expected" : {
+    "headers": {
+      "Content-Type": "html-yeah"
+    }
+  },
+  "actual": {
+    "headers": {
+      "Content-Type": "json-yeah"
+    }
+  }
+}

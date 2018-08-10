@@ -1,0 +1,18 @@
+{
+  "match": false,
+  "comment": "Mismatched type",
+  "expected": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "a": "b"
+    }
+  },
+  "actual": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": null
+  }
+}

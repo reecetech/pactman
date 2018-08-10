@@ -1,0 +1,21 @@
+{
+  "match": false,
+  "comment": "Unexpected data in request",
+  "expected": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "a": "b"
+    }
+  },
+  "actual": {
+    "metaData": {
+      "contentType": "application/json"
+    },
+    "body": {
+      "a": "b",
+      "d": "b"
+    }
+  }
+}
