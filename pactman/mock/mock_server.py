@@ -115,10 +115,18 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler, PactRequestHandler):
         if 'headers' in interaction['response']:
             self.response_headers.update(interaction['response']['headers'])
         if 'body' in interaction['response']:
-            if not any(h for h in self.headers if h[0].lower() == 'content-type'):
+            is_json = False
+            for h in self.response_headers:
+                if h.lower() == 'content-type':
+                    is_json = self.response_headers[h].startswith('application/json')
+                    break
+            else:
+                is_json = True
                 self.response_headers['Content-Type'] = 'application/json; charset=utf-8'
-            # TODO: assuming JSON
-            self.response_body = json.dumps(interaction['response']['body']).encode('utf8')
+            if is_json:
+                self.response_body = json.dumps(interaction['response']['body']).encode('utf8')
+            else:
+                self.response_body = interaction['response']['body']
 
     def do_DELETE(self):
         self.run_request('DELETE')

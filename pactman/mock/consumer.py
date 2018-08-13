@@ -95,7 +95,6 @@ class Consumer(object):
             raise ValueError(
                 'provider must be an instance of the Provider class.')
 
-        # TODO Add version (and use_mocking_server?) to the README
         return self.service_cls(
             consumer=self,
             provider=provider,

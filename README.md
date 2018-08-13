@@ -236,6 +236,23 @@ EachLike({
 
 For more information see [Matching](https://docs.pact.io/documentation/matching.html)
 
+### Some important has_pact_with options
+
+The `has_pact_with(provider...)` call has quite a few options documented in its API, but a couple are
+worth mentioning in particular:
+
+`version` declares the pact specification version that the provider supports. This defaults to "2.0.0", but "3.0.0"
+is also acceptable if your provider supports [Pact specification version 3].
+
+`use_mocking_server` defaults to `False` and controls the mocking method used by `pactman`. The default is to
+patch `urllib3`, which is the library underpinning `requests` and is also used by some other projects. If you
+are using a different library to make your HTTP requests which does not use `urllib3` underneath then you will need
+to set the `use_mocking_server` argument to `True`. This causes `pactman` to run an actual HTTP server to mock the
+requests (the server is listening on `pact.uri` - use that to redirect your HTTP requests to the mock server.) You
+may also set the `USE_MOCKING_SERVER` environment variable to "yes" to force your entire suite to use the server
+approach.
+
+
 ## Verifying Pacts Against a Service
 
 Run "pact-verifier -h" to see the options avialable. In short, to run all pacts registered at the Reece broker:
@@ -303,6 +320,7 @@ From there you can use pip to install it:
 [Pact documentation]: https://docs.pact.io/
 [Pact Mock Service]: https://github.com/bethesque/pact-mock_service
 [Pact specification]: https://github.com/pact-foundation/pact-specification
+[Pact specification version 3]: https://github.com/pact-foundation/pact-specification/tree/version-3
 [Provider States]: https://docs.pact.io/documentation/provider_states.html
 [pact-provider-verifier]: https://github.com/pact-foundation/pact-provider-verifier
 [pyenv]: https://github.com/pyenv/pyenv

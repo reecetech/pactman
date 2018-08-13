@@ -44,7 +44,7 @@ parser.add_argument('provider_setup_url', metavar='PROVIDER_SETUP_URL',
                     help='the URL to provider state setup')
 
 parser.add_argument('-b', '--broker-url', default=None,
-                    help='the URL of the pact broker')
+                    help='the URL of the pact broker; may also be provided in PACT_BROKER_URL environment variable')
 
 parser.add_argument('-l', '--local-pact-file', default=None,
                     help='path to a local pact file')

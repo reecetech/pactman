@@ -22,9 +22,6 @@ def pact_id(param):
     return repr(param)
 
 
-PACT_BROKER_URL = os.environ.get('PACT_BROKER_URL', 'http://pact-broker-dev.reecenet.org/pacts/provider/{}/latest')
-
-
 # Construct the coreapi client passing in the decoders explicitly so it uses all the installed
 # codecs rather than its limited subset "default". RJ: I believe the need to do this is a bug in coreapi
 coreapi_client = coreapi.Client(decoders=coreapi_utils.get_installed_codecs().values())
@@ -32,7 +29,10 @@ coreapi_client = coreapi.Client(decoders=coreapi_utils.get_installed_codecs().va
 
 class BrokerPacts:
     def __init__(self, provider_name, pact_broker_url=None, result=LoggedResult()):
-        self.pact_broker_url = (pact_broker_url or PACT_BROKER_URL).format(provider_name)
+        pact_broker_url = pact_broker_url or os.environ.get('PACT_BROKER_URL')
+        if not pact_broker_url:
+            raise ValueError('pact broker URL must be specified')
+        self.pact_broker_url = pact_broker_url.format(provider_name)
         self.hal = coreapi_client.get(self.pact_broker_url)
         self.result = result
 
@@ -65,6 +65,7 @@ class BrokerPact:
 
     def publish_result(self, version):
         # well, this doesn't look like freakin' black magic AT ALL!!
+        # TODO the pact might not have come from a broker; need to robustify this
         params = dict(success=self.result.success, providerApplicationVersion=version)
         overrides = dict(action='POST', encoding='application/json',
                          fields=[coreapi.Field(name='success'),
