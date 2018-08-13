@@ -38,7 +38,7 @@ class Consumer(object):
 
     def has_pact_with(self, provider, host_name='localhost', port=1234,
                       log_dir=None, ssl=False, sslcert=None, sslkey=None,
-                      pact_dir=None, version='2.0.0'):
+                      pact_dir=None, version='2.0.0', use_mocking_server=USE_MOCKING_SERVER):
         """
         Create a contract between the `provider` and this consumer.
 
@@ -104,8 +104,7 @@ class Consumer(object):
             ssl=ssl,
             sslcert=sslcert,
             sslkey=sslkey,
-            cors=cors,
             pact_dir=pact_dir,
             version=version,
-            use_mocking_server=USE_MOCKING_SERVER,
+            use_mocking_server=use_mocking_server,
         )

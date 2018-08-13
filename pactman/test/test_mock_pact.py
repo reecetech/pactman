@@ -1,6 +1,6 @@
 import os
 from unittest import TestCase
-from unittest.mock import patch, call, Mock
+from unittest.mock import patch, call
 
 from pactman.mock.consumer import Consumer
 from pactman.mock.provider import Provider
@@ -15,7 +15,6 @@ class PactTestCase(TestCase):
     def test_init_defaults(self):
         target = Pact(self.consumer, self.provider)
         self.assertIs(target.consumer, self.consumer)
-        self.assertIs(target.cors, False)
         self.assertEqual(target.host_name, 'localhost')
         self.assertEqual(target.log_dir, os.getcwd())
         self.assertEqual(target.pact_dir, os.getcwd())
@@ -148,7 +147,6 @@ class PactSetupTestCase(PactTestCase):
     def setUp(self):
         super(PactSetupTestCase, self).setUp()
         self.addCleanup(patch.stopall)
-        self.mock_requests = patch('requests.api.request').start()
         self.target = Pact(self.consumer, self.provider)
         (self.target
          .given('I am creating a new pact using the Pact class')
@@ -169,38 +167,6 @@ class PactSetupTestCase(PactTestCase):
                 'description': 'a specific request to the server',
                 'provider_state': 'I am creating a new pact using the '
                                   'Pact class'}]})
-
-    def test_error_deleting_interactions(self):
-        self.mock_requests.side_effect = iter([
-            Mock(status_code=500, text='deletion error')])
-
-        with self.assertRaises(AssertionError) as e:
-            self.target.setup()
-
-        self.assertEqual(str(e.exception), 'deletion error')
-        self.assertEqual(self.mock_requests.call_count, 1)
-        self.mock_requests.assert_has_calls([self.delete_call])
-
-    def test_error_posting_interactions(self):
-        self.mock_requests.side_effect = iter([
-            Mock(status_code=200),
-            Mock(status_code=500, text='post interactions error')])
-
-        with self.assertRaises(AssertionError) as e:
-            self.target.setup()
-
-        self.assertEqual(str(e.exception), 'post interactions error')
-        self.assertEqual(self.mock_requests.call_count, 2)
-        self.mock_requests.assert_has_calls(
-            [self.delete_call, self.put_interactions_call])
-
-    def test_successful(self):
-        self.mock_requests.side_effect = iter([Mock(status_code=200)] * 4)
-        self.target.setup()
-
-        self.assertEqual(self.mock_requests.call_count, 2)
-        self.mock_requests.assert_has_calls([
-            self.delete_call, self.put_interactions_call])
 
 
 class PactContextManagerTestCase(PactTestCase):

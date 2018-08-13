@@ -242,15 +242,15 @@ def get_matching_rules_v2(input, path):
             rules.update(get_matching_rules_v2(v, sub_path))
         return rules
     elif isinstance(input, Like):
-        rules = {path: {'matchers': [{'match': 'type'}]}}
+        rules = {path: {'match': 'type'}}
         rules.update(get_matching_rules_v2(input.matcher, path))
         return rules
     elif isinstance(input, EachLike):
-        rules = {path: {'matchers': [{'match': 'type', 'min': input.minimum}]}}
+        rules = {path: {'match': 'type', 'min': input.minimum}}
         rules.update(get_matching_rules_v2(input.matcher, path))
         return rules
     elif isinstance(input, Term):
-        return {path: {'matchers': [{'match': 'regex', 'regex': input.matcher}]}}
+        return {path: {'regex': input.matcher}}
     else:
         raise ValueError('Unknown type: %s' % type(input))
 

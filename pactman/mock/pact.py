@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 
 import os
 
-import requests
-
+from pactman.mock.request import Request
+from pactman.mock.response import Response
 from .mock_server import getMockServer
 from .mock_urlopen import MockURLOpenHandler
 from .pact_request_handler import Config
@@ -221,7 +221,3 @@ class Pact(object):
             return
 
         self.verify()
-
-
-
-

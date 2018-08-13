@@ -15,6 +15,7 @@ def read(filename):
     with open(path, 'rb') as f:
         return f.read().decode('utf-8')
 
+
 setup(
     name='pactman',
     version=about['__version__'],
