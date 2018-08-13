@@ -1,9 +1,5 @@
 # pactman
 
-[![Join the chat at https://gitter.im/realestate-com-au/pact](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/realestate-com-au/pact?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/pact-foundation/pactman.svg?branch=master)](https://travis-ci.org/pact-foundation/pactman)
-[![License](https://img.shields.io/github/license/pact-foundation/pactman.svg?maxAge=2592000)](https://github.com/pact-foundation/pactman/blob/master/LICENSE)
-
 Python version of Pact, including mocking, generation and verification of Pacts.
 Enables consumer driven contract testing, providing a mock service and DSL for the consumer project, and
 interaction playback and verification for the service provider project.
@@ -51,7 +47,7 @@ Then `Consumer`'s contract test might look something like this:
 import atexit
 import unittest
 
-from pact import Consumer, Provider
+from pactman import Consumer, Provider
 
 
 pact = Consumer('Consumer').has_pact_with(Provider('Provider'))
@@ -140,7 +136,7 @@ The default hostname and port for the Pact mock service will be
 `localhost:1234` but you can adjust this during Pact creation:
 
 ```python
-from pact import Consumer, Provider
+from pactman import Consumer, Provider
 pact = Consumer('Consumer').has_pact_with(
     Provider('Provider'), host_name='mockservice', port=8080)
 ```
@@ -169,7 +165,7 @@ to expect a timestamp with a particular format in the request or response where
 you know you need a particular format, but are unconcerned about the exact date:
 
 ```python
-from pact import Term
+from pactman import Term
 ...
 body = {
     'username': 'UserA',
@@ -192,7 +188,7 @@ and the test will be considered successful if the regex finds a match in the res
 Asserts the element's type matches the matcher. For example:
 
 ```python
-from pact import Like
+from pactman import Like
 Like(123)  # Matches if the value is an integer
 Like('hello world')  # Matches if the value is a string
 Like(3.14)  # Matches if the value is a float
@@ -202,7 +198,7 @@ The argument supplied to `Like` will be what the mock service responds with.
 When a dictionary is used as an argument for Like, all the child objects (and their child objects etc.) will be matched according to their types, unless you use a more specific matcher like a Term.
 
 ```python
-from pact import Like, Term
+from pactman import Like, Term
 Like({
     'username': Term('[a-zA-Z]+', 'username'),
     'id': 123, # integer
@@ -219,7 +215,7 @@ Asserts the value is an array type that consists of elements
 like the one passed in. It can be used to assert simple arrays:
 
 ```python
-from pact import EachLike
+from pactman import EachLike
 EachLike(1)  # All items are integers
 EachLike('hello')  # All items are strings
 ```
@@ -227,7 +223,7 @@ EachLike('hello')  # All items are strings
 Or other matchers can be nested inside to assert more complex objects:
 
 ```python
-from pact import EachLike, Term
+from pactman import EachLike, Term
 EachLike({
     'username': Term('[a-zA-Z]+', 'username'),
     'id': 123,
@@ -242,65 +238,19 @@ For more information see [Matching](https://docs.pact.io/documentation/matching.
 
 ## Verifying Pacts Against a Service
 
-In addition to writing Pacts for Python consumers, you can also verify those Pacts
-against a provider of any language. After installing pactman a `pact-verifier`
-application should be available. To get details about its use you can call it with the
-help argument:
+Run "pact-verifier -h" to see the options avialable. In short, to run all pacts registered at the Reece broker:
 
-```bash
-pact-verifier --help
-```
+  pact-verifier <provider service> <provider url> <provider setup url>
 
-The simplest example is verifying a server with locally stored Pact files and no provider
-states:
+You can pass in a different broker URL with -b (for example to use the "master" broker):
 
-```bash
-pact-verifier --provider-base-url=http://localhost:8080 --pact-url=./pacts/consumer-provider.json
-```
+  pact-verifier -b 'http://pact-broker.reecenet.org/pacts/provider/{}/latest' \
+    <provider service> <provider url> <provider setup url>
 
-Which will immediately invoke the Pact verifier, making HTTP requests to the server located
-at `http://localhost:8080` based on the Pacts in `./pacts/consumer-provider.json` and
-reporting the results.
+You can pass in a local pact file with -l, this will verify the service against the local file instead of the broker
 
-There are several options for configuring how the Pacts are verified:
-
-###### --provider-base-url
-
-Required. Defines the URL of the server to make requests to when verifying the Pacts.
-
-###### --pact-url
-
-Required if --pact-urls not specified. The location of a Pact file you want
-to verify. This can be a URL to a [Pact Broker] or a local path, to provide
-multiple files, specify multiple arguments.
-
-```
-pact-verifier --provider-base-url=http://localhost:8080 --pact-url=./pacts/one.json --pact-url=./pacts/two.json
-```
-
-###### --pact-urls
-
-Required if --pact-url not specified. The location of the Pact files you want
-to verify. This can be a URL to a [Pact Broker] or one or more local paths, separated by a comma.
-
-###### --provider-states-url
-
-_DEPRECATED AFTER v 0.6.0._ The URL where your provider application will produce the list of available provider states.
-The verifier calls this URL to ensure the Pacts specify valid states before making the HTTP
-requests.
-
-###### --provider-states-setup-url
-
-The URL which should be called to setup a specific provider state before a Pact is verified. This URL will be called with a POST request, and the JSON body `{consumer: 'Consumer name', state: 'a thing exists'}`.
-
-###### --pact-broker-username
-
-The username to use when contacting the Pact Broker.
-
-###### --pact-broker-password
-
-The password to use when contacting the Pact Broker. You can also specify this value
-as the environment variable `PACT_BROKER_PASSWORD`.
+    pact-verifier -l /Users/smithj/pacts/localpact.json \
+    <provider service> <provider url> <provider setup url>
 
 ### Provider States
 In many cases, your contracts will need very specific data to exist on the provider
@@ -311,11 +261,12 @@ states to communicate from the consumer what data should exist on the provider.
 
 When setting up the testing of a provider you will also need to setup the management of
 these provider states. The Pact verifier does this by making additional HTTP requests to
-the `--provider-states-setup-url` you provide. This URL could be
+the `<provider setup url>` you provide. This URL could be
 on the provider application or a separate one. Some strategies for managing state include:
 
 - Having endpoints in your application that are not active in production that create and delete your datastore state
-- A separate application that has access to the same datastore to create and delete, like a separate App Engine module or Docker container pointing to the same datastore
+- A separate application that has access to the same datastore to create and delete,
+  like a separate App Engine module or Docker container pointing to the same datastore
 - A standalone application that can start and stop the other server with different datastore states
 
 For more information about provider states, refer to the [Pact documentation] on [Provider States].
@@ -337,6 +288,13 @@ To package the application, run:
 This creates a `dist/pactman-N.N.N.tar.gz` file, where the Ns are the current version.
 From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
+
+## Release History
+
+1.0.0
+
+- Initial release of pactman, including ReeceTech's pact-verifier version 3.17 and pact-python version 0.17.0
+
 
 [context manager]: https://en.wikibooks.org/wiki/Python_Programming/Context_Managers
 [Pact]: https://www.gitbook.com/book/pact-foundation/pact/details

@@ -27,7 +27,7 @@ setup(
     url='https://github.com/reecetech/pact-python',
     entry_points='''
         [console_scripts]
-        pact-verifier=pact.verify:main
+        pact-verifier=pactman.verifier.command_line:main
     ''',
     install_requires=[
         'pytest',
