@@ -255,16 +255,14 @@ approach.
 
 ## Verifying Pacts Against a Service
 
-Run "pact-verifier -h" to see the options avialable. In short, to run all pacts registered at the Reece broker:
+Run "pact-verifier -h" to see the options avialable. To run all pacts registered to a provider in a [Pact Broker]:
 
-  pact-verifier <provider service> <provider url> <provider setup url>
+    pact-verifier -b 'http://pact-broker.example/pacts/provider/{}/latest' \
+      <provider service> <provider url> <provider setup url>
 
-You can pass in a different broker URL with -b (for example to use the "master" broker):
+You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
 
-  pact-verifier -b 'http://pact-broker.reecenet.org/pacts/provider/{}/latest' \
-    <provider service> <provider url> <provider setup url>
-
-You can pass in a local pact file with -l, this will verify the service against the local file instead of the broker
+You can pass in a local pact file with -l, this will verify the service against the local file instead of the broker:
 
     pact-verifier -l /Users/smithj/pacts/localpact.json \
     <provider service> <provider url> <provider setup url>
