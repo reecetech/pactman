@@ -1,22 +1,24 @@
-# pact-python
+# pactman
 
 [![Join the chat at https://gitter.im/realestate-com-au/pact](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/realestate-com-au/pact?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://travis-ci.org/pact-foundation/pact-python.svg?branch=master)](https://travis-ci.org/pact-foundation/pact-python)
-[![License](https://img.shields.io/github/license/pact-foundation/pact-python.svg?maxAge=2592000)](https://github.com/pact-foundation/pact-python/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/pact-foundation/pactman.svg?branch=master)](https://travis-ci.org/pact-foundation/pactman)
+[![License](https://img.shields.io/github/license/pact-foundation/pactman.svg?maxAge=2592000)](https://github.com/pact-foundation/pactman/blob/master/LICENSE)
 
-Python version of Pact. Enables consumer driven contract testing,
-providing a mock service and DSL for the consumer project, and
+Python version of Pact, including mocking, generation and verification of Pacts.
+Enables consumer driven contract testing, providing a mock service and DSL for the consumer project, and
 interaction playback and verification for the service provider project.
-Currently supports version 2 of the [Pact specification].
+Currently supports versions 1.1, 2 and 3 of the [Pact specification].
 
 For more information about what Pact is, and how it can help you
 test your code more efficiently, check out the [Pact documentation].
 
-# How to use pact-python
+Contains code originally from the [pact-python](https://github.com/pact-foundation/pact-python) project.
+
+# How to use pactman
 
 ## Installation
 ```
-pip install pact-python
+pip install pactman
 ```
 
 ## Writing a Pact
@@ -241,7 +243,7 @@ For more information see [Matching](https://docs.pact.io/documentation/matching.
 ## Verifying Pacts Against a Service
 
 In addition to writing Pacts for Python consumers, you can also verify those Pacts
-against a provider of any language. After installing pact-python a `pact-verifier`
+against a provider of any language. After installing pactman a `pact-verifier`
 application should be available. To get details about its use you can call it with the
 help argument:
 
@@ -323,30 +325,19 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 To setup a development environment:
 
-1. If you want to run tests for all Python versions, install 2.7, 3.3, 3.4, 3.5, and 3.6 from source or using a tool like [pyenv]
+1. Install Python 3.6 from source or using a tool like [pyenv]
 2. Its recommended to create a Python [virtualenv] for the project
 
-The setup the environment, run tests, and package the application, run:
-`make release`
+To run tests, use:
+`tox`
 
-If you are just interested in packaging pact-python so you can install it using pip:
+To package the application, run:
+`python setup.py sdist`
 
-`make package`
-
-This creates a `dist/pact-python-N.N.N.tar.gz` file, where the Ns are the current version.
+This creates a `dist/pactman-N.N.N.tar.gz` file, where the Ns are the current version.
 From there you can use pip to install it:
+`pip install ./dist/pactman-N.N.N.tar.gz`
 
-`pip install ./dist/pact-python-N.N.N.tar.gz`
-
-## Testing
-
-This project has unit and end to end tests, which can both be run from make:
-
-Unit: `make test`
-
-End to end: `make e2e`
-
-[bundler]: http://bundler.io/
 [context manager]: https://en.wikibooks.org/wiki/Python_Programming/Context_Managers
 [Pact]: https://www.gitbook.com/book/pact-foundation/pact/details
 [Pact Broker]: https://docs.pact.io/documentation/sharings_pacts.html
@@ -356,6 +347,4 @@ End to end: `make e2e`
 [Provider States]: https://docs.pact.io/documentation/provider_states.html
 [pact-provider-verifier]: https://github.com/pact-foundation/pact-provider-verifier
 [pyenv]: https://github.com/pyenv/pyenv
-[rvm]: https://rvm.io/
-[rbenv]: https://github.com/rbenv/rbenv
 [virtualenv]: http://python-guide-pt-br.readthedocs.io/en/latest/dev/virtualenvs/

@@ -85,7 +85,7 @@ class Consumer(object):
         :param use_mocking_server: If True the mocking will be done using a
             HTTP server rather than patching urllib3 connections. Can be set
             by the environment variable PACT_USE_MOCKING_SERVER which has
-            values "no" (defaul) or "yes".
+            values "no" (default) or "yes".
         :type use_mocking_server: bool
         :return: A Pact object which you can use to define the specific
             interactions your code will have with the provider.
@@ -95,6 +95,7 @@ class Consumer(object):
             raise ValueError(
                 'provider must be an instance of the Provider class.')
 
+        # TODO Add version (and use_mocking_server?) to the README
         return self.service_cls(
             consumer=self,
             provider=provider,
