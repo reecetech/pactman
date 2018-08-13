@@ -276,8 +276,9 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 To setup a development environment:
 
-1. Install Python 3.6 from source or using a tool like [pyenv]
-2. Its recommended to create a Python [virtualenv] for the project
+1. Clone the repository `https://github.com/reecetech/pactman` and invoke `git submodule update --init`
+2. Install Python 3.6 from source or using a tool like [pyenv]
+3. Its recommended to create a Python [virtualenv] for the project
 
 To run tests, use:
 `tox`
