@@ -28,7 +28,6 @@ class MockPool:
 
 class MockConnectionPool(urllib3.connectionpool.HTTPConnectionPool, MockPool):
     def urlopen(self, method, url, body=None, headers=None, **spam):
-        print('URLOPEN', method, self.host, self.port, url)
         if self.port not in self.mocks:
             return super().urlopen(method, url, body=body, headers=headers, **spam)
         return self.mocks[self.port](method, url, body=body, headers=headers)

@@ -69,9 +69,7 @@ class PactRequestHandler:
 
         interaction = self.get_interaction(url_parts.path)
 
-        # TODO: we make a pact here and below too in the JSON export...
         pact = MockPact(self.config.provider_name)
-        # TODO: assuming JSON
         if self.body:
             body = json.loads(self.body)
         else:
@@ -108,7 +106,8 @@ class PactRequestHandler:
                 if (existing['description'] == interaction['description']
                         and existing['provider_state'] == interaction['provider_state']):
                     # already got one of these...
-                    # TODO: detect when the pacts differ
+                    assert existing == interaction, 'Existing "{description}" pact given "{provider_state}" ' \
+                        'exists with different request/response'.format(**existing)
                     return
             pact['interactions'].append(interaction)
         else:
