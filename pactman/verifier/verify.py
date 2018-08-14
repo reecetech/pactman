@@ -4,12 +4,11 @@ from urllib.parse import parse_qs, urljoin
 import requests
 
 from .matching_rule import (
-    MatchingRule,
     RuleFailed,
     fold_type,
     nice_type,
     rule_matchers,
-)
+    Matcher)
 from .parse_header import parse_header
 from .paths import format_path
 
@@ -153,7 +152,7 @@ class ResponseVerifier:
         matching_rules = []
         for path, rule in rules.items():
             try:
-                matching_rules.append(MatchingRule(path, rule))
+                matching_rules.append(Matcher.get_matcher(path, rule))
             except RuleFailed as e:
                 log.error(f"{self.pact} Ignoring {e}")
         return matching_rules
@@ -278,7 +277,6 @@ class ResponseVerifier:
                 return None
             # version 3 rules paths don't include the interaction section ("body", "headers", ...)
             path = path[1:]
-
         weights = sorted((rule.weight(path), i, rule) for i, rule in enumerate(rules))
         weight, i, rule = weights[-1]
         if weight:

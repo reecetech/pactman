@@ -3,23 +3,23 @@ import collections
 import pytest
 
 from pactman.verifier.matching_rule import (
-    MatchingRule,
+    Matcher,
     RuleFailed,
     fold_type,
     split_path,
     weight_path,
-)
+    MatchType, MatchNull, MatchInclude, MatchEquality, MatchNumber, MatchDecimal, MatchInteger, MatchRegex)
 
 
 def test_stringify():
-    r = MatchingRule('$', {'match': 'type'})
+    r = MatchType('$', {'match': 'type'})
     assert str(r) == "Rule match by {'match': 'type'} at $"
-    assert repr(r) == "<MatchingRule $ {'match': 'type'}>"
+    assert repr(r) == "<MatchType $ {'match': 'type'}>"
 
 
 def test_invalid_match_type():
     with pytest.raises(RuleFailed):
-        MatchingRule('$', {'match': 'spam'})
+        Matcher.get_matcher('$', {'match': 'spam'})
 
 
 @pytest.mark.parametrize('path, weight', [
@@ -30,7 +30,7 @@ def test_invalid_match_type():
     ('$.body.*.level[*].id', 16),
 ])
 def test_weightings(path, weight):
-    rule = MatchingRule(path, {'match': 'type'})
+    rule = Matcher(path, {'match': 'type'})
     assert rule.weight(['body', 'item1', 'level', 1, 'id']) == weight
     assert rule.weight(['body', 'item2', 'spam', 1, 'id']) == 0
 
@@ -73,97 +73,97 @@ def test_weight_path(path, other, result):
     (1.0, 1.0),
 ])
 def test_numbers(data, spec):
-    MatchingRule('$', dict(match='type')).apply(data, spec, ['a'])
+    MatchType('$', dict(match='type')).apply(data, spec, ['a'])
 
 
 def test_regex():
-    MatchingRule('$', dict(match='regex', regex='\w+')).apply('spam', None, ['a'])
+    MatchRegex('$', dict(match='regex', regex='\w+')).apply('spam', None, ['a'])
 
 
 def test_regex_fail():
     with pytest.raises(RuleFailed):
-        MatchingRule('$', dict(match='regex', regex='\W+')).apply('spam', None, ['a'])
+        MatchRegex('$', dict(match='regex', regex='\W+')).apply('spam', None, ['a'])
 
 
 def test_integer():
-    MatchingRule('$', dict(match='integer')).apply(1, None, ['a'])
+    MatchInteger('$', dict(match='integer')).apply(1, None, ['a'])
 
 
 def test_integer_fail():
     with pytest.raises(RuleFailed):
-        MatchingRule('$', dict(match='integer')).apply(1.0, None, ['a'])
+        MatchInteger('$', dict(match='integer')).apply(1.0, None, ['a'])
 
 
 def test_decimal():
-    MatchingRule('$', dict(match='decimal')).apply(1.0, None, ['a'])
+    MatchDecimal('$', dict(match='decimal')).apply(1.0, None, ['a'])
 
 
 def test_decimal_fail():
     with pytest.raises(RuleFailed):
-        MatchingRule('$', dict(match='decimal')).apply(1, None, ['a'])
+        MatchDecimal('$', dict(match='decimal')).apply(1, None, ['a'])
 
 
 @pytest.mark.parametrize('value', [1, 1.0])
 def test_number(value):
-    MatchingRule('$', dict(match='number')).apply(value, None, ['a'])
+    MatchNumber('$', dict(match='number')).apply(value, None, ['a'])
 
 
 def test_number_fail():
     with pytest.raises(RuleFailed):
-        MatchingRule('$', dict(match='number')).apply('spam', None, ['a'])
+        MatchNumber('$', dict(match='number')).apply('spam', None, ['a'])
 
 
 def test_equality():
-    MatchingRule('$', dict(match='equality', value='spam')).apply('spam', None, ['a'])
+    MatchEquality('$', dict(match='equality', value='spam')).apply('spam', None, ['a'])
 
 
 def test_equality_fail():
     with pytest.raises(RuleFailed):
-        MatchingRule('$', dict(match='equality', value='spam')).apply('ham', None, ['a'])
+        MatchEquality('$', dict(match='equality', value='spam')).apply('ham', None, ['a'])
 
 
 def test_include():
-    MatchingRule('$', dict(match='include', value='spam')).apply('spammer', None, ['a'])
+    MatchInclude('$', dict(match='include', value='spam')).apply('spammer', None, ['a'])
 
 
 def test_include_fail():
     with pytest.raises(RuleFailed):
-        MatchingRule('$', dict(match='include', value='spam')).apply('ham', None, ['a'])
+        MatchInclude('$', dict(match='include', value='spam')).apply('ham', None, ['a'])
 
 
 def test_null():
-    MatchingRule('$', dict(match='null')).apply(None, None, ['a'])
+    MatchNull('$', dict(match='null')).apply(None, None, ['a'])
 
 
 def test_null_fail():
     with pytest.raises(RuleFailed):
-        MatchingRule('$', dict(match='null')).apply('ham', None, ['spam'])
+        MatchNull('$', dict(match='null')).apply('ham', None, ['spam'])
 
 
 def test_min():
-    MatchingRule('$.body.a', dict(match='type', min=1)).apply(['spam'], ['a'], [])
+    MatchType('$', dict(match='type', min=1)).apply(['spam'], ['a'], [])
 
 
 def test_min_not_met():
     with pytest.raises(RuleFailed):
-        MatchingRule('$.body.a', dict(match='type', min=2)).apply(['spam'], ['a', 'b'], ['spam'])
+        MatchType('$', dict(match='type', min=2)).apply(['spam'], ['a', 'b'], ['spam'])
 
 
 def test_min_ignored():
-    MatchingRule('$.body.a', dict(match='type', min=1)).apply(0, 0, [])
+    MatchType('$', dict(match='type', min=1)).apply(0, 0, [])
 
 
 def test_max():
-    MatchingRule('$.body.a', dict(match='type', max=1)).apply(['spam'], ['a'], [])
+    MatchType('$', dict(match='type', max=1)).apply(['spam'], ['a'], [])
 
 
 def test_max_not_met():
     with pytest.raises(RuleFailed):
-        MatchingRule('$.body.a', dict(match='type', max=2)).apply([1, 2, 3], [1, 2], ['spam'])
+        MatchType('$', dict(match='type', max=2)).apply([1, 2, 3], [1, 2], ['spam'])
 
 
 def test_max_ignored():
-    MatchingRule('$.body.a', dict(match='type', max=1)).apply(0, 0, [])
+    MatchType('$', dict(match='type', max=1)).apply(0, 0, [])
 
 
 @pytest.mark.parametrize('source, result', [
