@@ -1,7 +1,6 @@
 import logging
 from urllib.parse import parse_qs, urljoin
 
-import hal_codec
 import requests
 
 from .matching_rule import (
@@ -124,7 +123,7 @@ class Interaction:
 
     @property
     def _request_payload(self):
-        return hal_codec._document_to_primative(self.request['body'])
+        return self.request['body']
 
     @property
     def _content_type_json(self):

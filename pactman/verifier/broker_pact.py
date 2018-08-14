@@ -5,10 +5,10 @@ https://github.com/pact-foundation/pact-specification/tree/version-2
 import json
 import logging
 import os
+import urllib.parse
 
-import coreapi
 import semver
-from coreapi import utils as coreapi_utils
+from restnavigator import Navigator
 
 from .result import LoggedResult
 from .verify import Interaction
@@ -22,24 +22,27 @@ def pact_id(param):
     return repr(param)
 
 
-# Construct the coreapi client passing in the decoders explicitly so it uses all the installed
-# codecs rather than its limited subset "default". RJ: I believe the need to do this is a bug in coreapi
-coreapi_client = coreapi.Client(decoders=coreapi_utils.get_installed_codecs().values())
-
-
 class BrokerPacts:
     def __init__(self, provider_name, pact_broker_url=None, result=LoggedResult()):
-        pact_broker_url = pact_broker_url or os.environ.get('PACT_BROKER_URL')
-        if not pact_broker_url:
+        self.provider_name = provider_name
+        self.pact_broker_url = pact_broker_url or os.environ.get('PACT_BROKER_URL')
+        if not self.pact_broker_url:
             raise ValueError('pact broker URL must be specified')
-        self.pact_broker_url = pact_broker_url.format(provider_name)
-        self.hal = coreapi_client.get(self.pact_broker_url)
         self.result = result
 
+    def get_broker_navigator(self):
+        # TODO: remove the manipulation of the URL to allow broker URLs with path components at the root
+        url_parts = urllib.parse.urlparse(self.pact_broker_url)
+        url = f'{url_parts.scheme}://{url_parts.netloc}/'
+        return Navigator.hal(url, default_curie='pb')
+
     def consumers(self):
-        for pact_name in self.hal['pacts']:
-            hal = coreapi_client.action(self.hal, ['pacts', pact_name])
-            yield BrokerPact(hal, self.result)
+        nav = self.get_broker_navigator()
+        broker_provider = nav['latest-provider-pacts'](provider=self.provider_name)
+        broker_provider.fetch()
+        for broker_pact in broker_provider['pacts']:
+            pact_contents = broker_pact.fetch()
+            yield BrokerPact(pact_contents, self.result, broker_pact)
 
     def all_interactions(self):
         for pact in self.consumers():
@@ -47,34 +50,28 @@ class BrokerPacts:
 
 
 class BrokerPact:
-    def __init__(self, hal, result):
-        self.hal = hal
+    def __init__(self, pact, result, broker_pact=None):
         self.result = result
-        self.provider = hal['provider']['name']
-        self.consumer = hal['consumer']['name']
-        self.metadata = hal['metadata']
+        self.pact = pact
+        self.provider = pact['provider']['name']
+        self.consumer = pact['consumer']['name']
+        self.metadata = pact['metadata']
         if 'pactSpecification' in self.metadata:
             # the Ruby implementation generates non-compliant metadata, handle that :-(
             self.version = semver.parse(self.metadata['pactSpecification']['version'])
         else:
             self.version = semver.parse(self.metadata['pact-specification']['version'])
-        self.interactions = [Interaction(self, interaction, self.result) for interaction in hal['interactions']]
+        self.interactions = [Interaction(self, interaction, self.result) for interaction in pact['interactions']]
+        self.broker_pact = broker_pact
 
     def __str__(self):
         return f'<Pact consumer={self.consumer} provider={self.provider}>'
 
     def publish_result(self, version):
-        # well, this doesn't look like freakin' black magic AT ALL!!
-        # TODO the pact might not have come from a broker; need to robustify this
-        params = dict(success=self.result.success, providerApplicationVersion=version)
-        overrides = dict(action='POST', encoding='application/json',
-                         fields=[coreapi.Field(name='success'),
-                                 coreapi.Field(name='providerApplicationVersion')])
-        coreapi_client.action(self.hal, ['publish-verification-results'], params=params, overrides=overrides,
-                              validate=False)
-        # this being the requests version....
-        # response = requests.post(self.hal['publish-verification-results'].url, json=params)
-        # return response.ok
+        if self.broker_pact is None:
+            return
+        self.broker_pact['publish-verification-results'].create(dict(success=self.result.success,
+                                                                     providerApplicationVersion=version))
 
     @classmethod
     def load_file(cls, filename, result=LoggedResult()):

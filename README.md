@@ -237,7 +237,6 @@ EachLike({
 For more information see [Matching](https://docs.pact.io/documentation/matching.html)
 
 ### Some important has_pact_with options
-
 The `has_pact_with(provider...)` call has quite a few options documented in its API, but a couple are
 worth mentioning in particular:
 
@@ -252,20 +251,16 @@ requests (the server is listening on `pact.uri` - use that to redirect your HTTP
 may also set the `USE_MOCKING_SERVER` environment variable to "yes" to force your entire suite to use the server
 approach.
 
-
 ## Verifying Pacts Against a Service
+Run `pact-verifier -h` to see the options available. To run all pacts registered to a provider in a [Pact Broker]:
 
-Run "pact-verifier -h" to see the options avialable. To run all pacts registered to a provider in a [Pact Broker]:
-
-    pact-verifier -b 'http://pact-broker.example/pacts/provider/{}/latest' \
-      <provider service> <provider url> <provider setup url>
+    pact-verifier -b http://pact-broker.example/ <provider service> <provider url> <provider setup url>
 
 You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
 
-You can pass in a local pact file with -l, this will verify the service against the local file instead of the broker:
+You can pass in a local pact file with `-l`, this will verify the service against the local file instead of the broker:
 
-    pact-verifier -l /Users/smithj/pacts/localpact.json \
-    <provider service> <provider url> <provider setup url>
+    pact-verifier -l /tmp/localpact.json <provider service> <provider url> <provider setup url>
 
 ### Provider States
 In many cases, your contracts will need very specific data to exist on the provider

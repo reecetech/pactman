@@ -1,6 +1,5 @@
 import collections
 
-import coreapi
 import pytest
 
 from pactman.verifier.matching_rule import (
@@ -171,8 +170,6 @@ def test_max_ignored():
     ({}, dict),
     ([], list),
     (collections.OrderedDict(), dict),
-    (coreapi.document.Object(), dict),
-    (coreapi.document.Array(), list),
 ])
 def test_fold_type(source, result):
     assert fold_type(source) == result

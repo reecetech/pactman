@@ -34,8 +34,7 @@ setup(
         'requests',
         'semver',
         'colorama',
-        'coreapi',
-        'hal-codec'
+        'restnavigator'
         # 'click',
     ],
     packages=['pactman'],

@@ -6,8 +6,6 @@ import logging
 import re
 from collections import OrderedDict
 
-import coreapi
-
 from .paths import format_path
 
 
@@ -78,12 +76,8 @@ def weight_path(spec_path, element_path):
 
 
 def fold_type(obj):
-    if type(obj) == coreapi.document.Object:
-        return dict
     if type(obj) == OrderedDict:
         return dict
-    if type(obj) == coreapi.document.Array:
-        return list
     return type(obj)
 
 

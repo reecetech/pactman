@@ -3,11 +3,10 @@ import pathlib
 from itertools import chain
 from unittest.mock import Mock
 
-import coreapi
-import hal_codec
 import pytest
 import requests
 import semver
+from restnavigator import Navigator
 
 from pactman.verifier.broker_pact import BrokerPact, BrokerPacts, pact_id
 from pactman.verifier.result import Result
@@ -35,6 +34,16 @@ def fake_interaction():
 
 
 @pytest.fixture
+def fake_pact(fake_interaction):
+    return {
+        'provider': {'name': 'SpamProvider'},
+        'consumer': {'name': 'SpamConsumer'},
+        'interactions': [fake_interaction],
+        'metadata': {'pact-specification': {'version': '2.0.0'}},
+    }
+
+
+@pytest.fixture
 def mock_pact():
     def create_mock(version):
         return Mock(provider='SpamProvider', consumer='SpamConsumer', version=semver.parse(version))
@@ -52,49 +61,31 @@ def test_pact_id():
     assert pact_id(1) == repr(1)
 
 
-@pytest.mark.parametrize('specname', ['pact-specification', 'pactSpecification'])
-def test_pact_loading(monkeypatch, fake_interaction, specname):
-    provider_hal = hal_codec._parse_document({
-        '_links': {
-            'pacts': [{'href': 'http://broker.example/consumer/1', 'name': 'SpamConsumer'}]
-        }
+def test_pact_loading(monkeypatch, fake_pact):
+    p = BrokerPacts('SpamProvider', 'http://broker.example/')
+    mock_pact = Mock(fetch=Mock(return_value=fake_pact))
+    mock_provider = Mock(fetch=lambda: None, __getitem__=lambda s, k: [mock_pact])
+    monkeypatch.setattr(Navigator, 'hal', lambda url, default_curie=None: {
+        'latest-provider-pacts': lambda provider=None: mock_provider
     })
-    pact_hal = hal_codec._parse_document({
-        'provider': {'name': 'SpamProvider'},
-        'consumer': {'name': 'SpamConsumer'},
-        'interactions': [fake_interaction],
-        'metadata': {specname: {'version': '2.0.0'}}
-    })
-    monkeypatch.setattr(coreapi.Client, 'get', Mock(return_value=provider_hal))
-    monkeypatch.setattr(coreapi.Client, 'action', Mock(return_value=pact_hal))
-
-    p = BrokerPacts('SpamProvider', 'http://broker.example/{}')
-    assert p.pact_broker_url == 'http://broker.example/SpamProvider'
-    coreapi.Client.get.assert_called_with('http://broker.example/SpamProvider')
 
     for e in p.consumers():
         assert str(e) == '<Pact consumer=SpamConsumer provider=SpamProvider>'
         assert e.provider == 'SpamProvider'
-    coreapi.Client.action.assert_called_with(provider_hal, ['pacts', 'SpamConsumer'])
 
     for e in p.all_interactions():
         assert e.description == 'dummy'
 
 
-def test_pact_publish(monkeypatch, fake_interaction):
-    pact_hal = hal_codec._parse_document({
-        'provider': {'name': 'SpamProvider'},
-        'consumer': {'name': 'SpamConsumer'},
-        'interactions': [fake_interaction],
-        'metadata': {'pact-specification': {'version': '2.0.0'}}
-    })
-    monkeypatch.setattr(coreapi.Client, 'action', Mock(return_value=pact_hal))
-
-    BrokerPact(pact_hal, Mock()).publish_result('1.0')
-    coreapi.Client.action.assert_called_once()
+def test_pact_publish(fake_pact):
+    mock_result = Mock()
+    mock_pact = {'publish-verification-results': mock_result}
+    p = BrokerPact(fake_pact, Mock(), mock_pact)
+    p.publish_result('1.0')
+    mock_result.create.assert_called_once()
 
 
-def test_pact_file_loading(monkeypatch, fake_interaction):
+def test_pact_file_loading(fake_interaction):
     p = BrokerPact.load_file(str(BASE_DIR / 'testcases-version-3' / 'dummypact.json'))
     assert str(p) == '<Pact consumer=SpamConsumer provider=SpamProvider>'
     assert p.provider == 'SpamProvider'
@@ -102,7 +93,7 @@ def test_pact_file_loading(monkeypatch, fake_interaction):
         assert e.description == 'dummy'
 
 
-def test_interaction(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction(mock_pact, mock_result, fake_interaction):
     i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
     assert repr(i) == 'SpamConsumer:dummy'
 
@@ -356,8 +347,7 @@ class FakeRequest:
 def test_version_1_1_response_testcases(filename, mock_pact, mock_result):
     with open(filename) as file:
         case = json.load(file)
-        expected = coreapi.Object(case['expected'])
-        rv = ResponseVerifier(mock_pact('1.1.0'), expected, mock_result)
+        rv = ResponseVerifier(mock_pact('1.1.0'), case['expected'], mock_result)
         rv.verify(FakeResponse(case['actual']))
         success = not bool(rv.result.fail.call_count)
         assert case['match'] == success
@@ -370,8 +360,7 @@ def test_version_1_1_response_testcases(filename, mock_pact, mock_result):
 def test_version_1_1_request_testcases(filename, mock_pact, mock_result):
     with open(filename) as file:
         case = json.load(file)
-        expected = coreapi.Object(case['expected'])
-        rv = RequestVerifier(mock_pact('1.1.0'), expected, mock_result)
+        rv = RequestVerifier(mock_pact('1.1.0'), case['expected'], mock_result)
         rv.verify(FakeRequest(case['actual']))
         success = not bool(rv.result.fail.call_count)
         assert case['match'] == success
@@ -389,8 +378,7 @@ def test_version_2_response_testcases(filename, mock_pact, mock_result):
         case = json.load(file)
         if case['expected'].get('headers', {}).get('Content-Type', "") == 'application/xml':
             raise pytest.skip('XML content type not supported')
-        expected = coreapi.Object(case['expected'])
-        rv = ResponseVerifier(mock_pact('2.0.0'), expected, mock_result)
+        rv = ResponseVerifier(mock_pact('2.0.0'), case['expected'], mock_result)
         rv.verify(FakeResponse(case['actual']))
         success = not bool(rv.result.fail.call_count)
         assert case['match'] == success
@@ -405,8 +393,7 @@ def test_version_2_request_testcases(filename, mock_pact, mock_result):
         case = json.load(file)
         if case['expected'].get('headers', {}).get('Content-Type', "") == 'application/xml':
             raise pytest.skip('XML content type not supported')
-        expected = coreapi.Object(case['expected'])
-        rv = RequestVerifier(mock_pact('2.0.0'), expected, mock_result)
+        rv = RequestVerifier(mock_pact('2.0.0'), case['expected'], mock_result)
         rv.verify(FakeRequest(case['actual']))
         success = not bool(rv.result.fail.call_count)
         assert case['match'] == success
@@ -421,8 +408,7 @@ def test_version_3_request_testcases(filename, mock_pact, mock_result):
         case = json.load(file)
         if case['expected'].get('headers', {}).get('Content-Type', "") == 'application/xml':
             raise pytest.skip('XML content type not supported')
-        expected = coreapi.Object(case['expected'])
-        rv = RequestVerifier(mock_pact('3.0.0'), expected, mock_result)
+        rv = RequestVerifier(mock_pact('3.0.0'), case['expected'], mock_result)
         rv.verify(FakeRequest(case['actual']))
         success = not bool(rv.result.fail.call_count)
         assert case['match'] == success
@@ -443,8 +429,7 @@ def test_version_3_response_testcases(filename, mock_pact, mock_result):
             raise pytest.skip('JSON test case mal-formed')
         if case['expected'].get('headers', {}).get('Content-Type', "") == 'application/xml':
             raise pytest.skip('XML content type not supported')
-        expected = coreapi.Object(case['expected'])
-        rv = ResponseVerifier(mock_pact('3.0.0'), expected, mock_result)
+        rv = ResponseVerifier(mock_pact('3.0.0'), case['expected'], mock_result)
         rv.verify(FakeResponse(case['actual']))
         success = not bool(rv.result.fail.call_count)
         assert case['match'] == success
