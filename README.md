@@ -254,13 +254,13 @@ approach.
 ## Verifying Pacts Against a Service
 Run `pact-verifier -h` to see the options available. To run all pacts registered to a provider in a [Pact Broker]:
 
-    pact-verifier -b http://pact-broker.example/ <provider service> <provider url> <provider setup url>
+    pact-verifier -b http://pact-broker.example/ <provider name> <provider url> <provider setup url>
 
 You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
 
 You can pass in a local pact file with `-l`, this will verify the service against the local file instead of the broker:
 
-    pact-verifier -l /tmp/localpact.json <provider service> <provider url> <provider setup url>
+    pact-verifier -l /tmp/localpact.json <provider name> <provider url> <provider setup url>
 
 ### Provider States
 In many cases, your contracts will need very specific data to exist on the provider
