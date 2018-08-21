@@ -51,8 +51,8 @@ from pactman import Consumer, Provider
 
 
 pact = Consumer('Consumer').has_pact_with(Provider('Provider'))
-pact.start_service()
-atexit.register(pact.stop_service)
+pact.start_mocking()
+atexit.register(pact.stop_mocking)
 
 
 class GetUserInfoContract(unittest.TestCase):
@@ -63,11 +63,13 @@ class GetUserInfoContract(unittest.TestCase):
       'groups': ['Editors']
     }
 
-    (pact
-     .given('UserA exists and is not an administrator')
-     .upon_receiving('a request for UserA')
-     .with_request('get', '/users/UserA')
-     .will_respond_with(200, body=expected))
+    pact.given(
+        'UserA exists and is not an administrator'
+    ).upon_receiving(
+        'a request for UserA'
+    ).with_request(
+        'GET', '/users/UserA'
+    ) .will_respond_with(200, body=expected)
 
     with pact:
       result = user('UserA')
@@ -90,11 +92,13 @@ returned the expected value. If you want more control over when the mock service
 configured and the interactions verified, use the `setup` and `verify` methods, respectively:
 
 ```python
-   (pact
-     .given('UserA exists and is not an administrator')
-     .upon_receiving('a request for UserA')
-     .with_request('get', '/users/UserA')
-     .will_respond_with(200, body=expected))
+    pact.given(
+        'UserA exists and is not an administrator'
+    ).upon_receiving(
+        'a request for UserA'
+    ).with_request(
+        'GET', '/users/UserA'
+    ) .will_respond_with(200, body=expected)
 
     pact.setup()
     # Some additional steps before running the code under test
@@ -132,27 +136,31 @@ You can define exact values for your expected request like the examples above,
 or you can use the matchers defined later to assist in handling values that are
 variable.
 
-The default hostname and port for the Pact mock service will be
-`localhost:1234` but you can adjust this during Pact creation:
+### Some important has_pact_with options
+
+The `has_pact_with(provider...)` call has quite a few options documented in its API, but a couple are
+worth mentioning in particular:
+
+`version` declares the pact specification version that the provider supports. This defaults to "2.0.0", but "3.0.0"
+is also acceptable if your provider supports [Pact specification version 3]:
 
 ```python
 from pactman import Consumer, Provider
-pact = Consumer('Consumer').has_pact_with(
-    Provider('Provider'), host_name='mockservice', port=8080)
+pact = Consumer('Consumer').has_pact_with(Provider('Provider'), version='3.0.0')
 ```
 
-This can be useful if you need to run to create more than one Pact for your test
-because your code interacts with two different services. It is important to note
-that the code you are testing with this contract _must_ contact the mock service.
-So in this example, the `user` method could accept an argument to specify the
-location of the server, or retrieve it from an environment variable so you can
-change its URI during the test.
+`use_mocking_server` defaults to `False` and controls the mocking method used by `pactman`. The default is to
+patch `urllib3`, which is the library underpinning `requests` and is also used by some other projects. If you
+are using a different library to make your HTTP requests which does not use `urllib3` underneath then you will need
+to set the `use_mocking_server` argument to `True`. This causes `pactman` to run an actual HTTP server to mock the
+requests (the server is listening on `pact.uri` - use that to redirect your HTTP requests to the mock server.) You
+may also set the `USE_MOCKING_SERVER` environment variable to "yes" to force your entire suite to use the server
+approach.
 
-The mock service offers you several important features when building your contracts:
-- It provides a real HTTP server that your code can contact during the test and provides the responses you defined.
-- You provide it with the expectations for the request your code will make and it will assert the contents of the actual requests made based on your expectations.
-- If a request is made that does not match one you defined or if a request from your code is missing it will return an error with details.
-- Finally, it will record your contracts as a JSON file that you can store in your repository or publish to a Pact broker.
+```python
+from pactman import Consumer, Provider
+pact = Consumer('Consumer').has_pact_with(Provider('Provider'), use_mocking_server=True)
+```
 
 ## Expecting Variable Content
 The above test works great if that user information is always static, but what happens if
@@ -235,21 +243,6 @@ EachLike({
 > JSON response, any extra data that is received will be ignored and the tests will still pass.
 
 For more information see [Matching](https://docs.pact.io/documentation/matching.html)
-
-### Some important has_pact_with options
-The `has_pact_with(provider...)` call has quite a few options documented in its API, but a couple are
-worth mentioning in particular:
-
-`version` declares the pact specification version that the provider supports. This defaults to "2.0.0", but "3.0.0"
-is also acceptable if your provider supports [Pact specification version 3].
-
-`use_mocking_server` defaults to `False` and controls the mocking method used by `pactman`. The default is to
-patch `urllib3`, which is the library underpinning `requests` and is also used by some other projects. If you
-are using a different library to make your HTTP requests which does not use `urllib3` underneath then you will need
-to set the `use_mocking_server` argument to `True`. This causes `pactman` to run an actual HTTP server to mock the
-requests (the server is listening on `pact.uri` - use that to redirect your HTTP requests to the mock server.) You
-may also set the `USE_MOCKING_SERVER` environment variable to "yes" to force your entire suite to use the server
-approach.
 
 ## Verifying Pacts Against a Service
 Run `pact-verifier -h` to see the options available. To run all pacts registered to a provider in a [Pact Broker]:

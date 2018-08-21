@@ -37,7 +37,6 @@ class Pact(object):
 
     HEADERS = {'X-Pact-Mock-Service': 'true'}
 
-    # TODO: do something about version...
     def __init__(self, consumer, provider, host_name='localhost', port=1234,
                  log_dir=None, ssl=False, sslcert=None, sslkey=None,
                  pact_dir=None, version='2.0.0',
@@ -122,7 +121,7 @@ class Pact(object):
     def setup(self):
         self._mock_handler.setup(self._interactions)
 
-    def start_service(self):
+    def start_mocking(self):
         config = Config(self.consumer.name, self.provider.name, self.log_dir, self.pact_dir, self.file_write_mode)
         self.port = config.port
         if self.use_mocking_server:
@@ -131,8 +130,12 @@ class Pact(object):
             # ain't no port, we're monkey-patching (but the URLs we generate still need to look correct)
             self._mock_handler = MockURLOpenHandler(config)
 
-    def stop_service(self):
+    def stop_mocking(self):
         self._mock_handler.terminate()
+
+    # legacy pact-python API support
+    start_service = start_mocking
+    stop_service = stop_mocking
 
     def upon_receiving(self, scenario):
         """
