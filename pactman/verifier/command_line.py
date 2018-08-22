@@ -113,7 +113,7 @@ def main():
     result = CaptureResult()
     args = parser.parse_args()
     provider_version = args.provider_version or args.provider_app_version
-    if args.results_to_broker and not provider_version:
+    if args.publish_verification_results and not provider_version:
         print('Provider version is required to publish results to the broker')
         return False
     if args.quiet:
@@ -133,7 +133,7 @@ def main():
         for interaction in pact.interactions:
             interaction.verify(args.provider_url, args.provider_setup_url)
             success = interaction.result.success and success
-        if args.results_to_broker:
+        if args.publish_verification_results:
             pact.publish_result(provider_version)
         else:
             print()
