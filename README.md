@@ -295,7 +295,7 @@ From there you can use pip to install it:
 
 ## Release History
 
-1.0.0
+1.0.4
 
 - Initial release of pactman, including ReeceTech's pact-verifier version 3.17 and pact-python version 0.17.0
 

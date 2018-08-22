@@ -11,8 +11,7 @@ with open(os.path.join(here, "pactman", "__version__.py")) as f:
 
 
 def read(filename):
-    path = os.path.realpath(os.path.join(os.path.dirname(__file__), filename))
-    with open(path, 'rb') as f:
+    with open(os.path.join(here, filename), 'rb') as f:
         return f.read().decode('utf-8')
 
 
@@ -22,6 +21,7 @@ setup(
     description=('Tools for creating and verifying consumer driven contracts'
                  ' using the Pact framework.'),
     long_description=read('README.md'),
+    long_description_content_type='text/markdown',  # This is important!
     author='ReeceTech',
     author_email='richard.jones@reece.com.au',
     url='https://github.com/reecetech/pact-python',
@@ -38,5 +38,5 @@ setup(
         # 'click',
     ],
     packages=['pactman'],
-    license=read('LICENSE')
+    license='MIT, Copyright (c) 2018 ReeceTech'
 )
