@@ -34,11 +34,9 @@ If the code to fetch a user looked like this:
 ```python
 import requests
 
-
-def user(user_name):
-    """Fetch a user object by user_name from the server."""
-    uri = 'http://localhost:1234/users/' + user_name
-    return requests.get(uri).json()
+def get_user(user_name):
+    response = requests.get(f'http://service.example/users/{user_name}')
+    return response.json()
 ```
 
 Then `Consumer`'s contract test might look something like this:
@@ -72,7 +70,7 @@ class GetUserInfoContract(unittest.TestCase):
     ) .will_respond_with(200, body=expected)
 
     with pact:
-      result = user('UserA')
+      result = get_user('UserA')
 
     self.assertEqual(result, expected)
 
@@ -101,10 +99,12 @@ configured and the interactions verified, use the `setup` and `verify` methods, 
     ) .will_respond_with(200, body=expected)
 
     pact.setup()
-    # Some additional steps before running the code under test
-    result = user('UserA')
-    # Some additional steps before verifying all interactions have occurred
-    pact.verify()
+    try:
+        # Some additional steps before running the code under test
+        result = get_user('UserA')
+        # Some additional steps before verifying all interactions have occurred
+    finally:
+        pact.verify()
 ```
 
 ### Requests

@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -37,6 +37,6 @@ setup(
         'restnavigator'
         # 'click',
     ],
-    packages=['pactman'],
+    packages=find_packages(),
     license='MIT, Copyright (c) 2018 ReeceTech'
 )
