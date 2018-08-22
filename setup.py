@@ -38,5 +38,14 @@ setup(
         # 'click',
     ],
     packages=find_packages(),
-    license='MIT, Copyright (c) 2018 ReeceTech'
+    license='MIT, Copyright (c) 2018 ReeceTech',
+    classifiers=[
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Topic :: Software Development :: Testing',
+        'Topic :: Software Development :: Testing :: Mocking',
+        'Topic :: Software Development :: Testing :: Acceptance',
+    ]
 )

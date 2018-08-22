@@ -13,6 +13,9 @@ Contains code originally from the [pact-python](https://github.com/pact-foundati
 # How to use pactman
 
 ## Installation
+
+`pactman` requires Python 3.6 to run.
+
 ```
 pip install pactman
 ```
@@ -294,6 +297,10 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+1.0.7
+
+- Added some Trove classifiers to aid potential users.
 
 1.0.6
 
