@@ -1,4 +1,5 @@
 import collections
+from unittest.mock import Mock
 
 import pytest
 
@@ -8,7 +9,8 @@ from pactman.verifier.matching_rule import (
     fold_type,
     split_path,
     weight_path,
-    MatchType, MatchNull, MatchInclude, MatchEquality, MatchNumber, MatchDecimal, MatchInteger, MatchRegex)
+    MatchType, MatchNull, MatchInclude, MatchEquality, MatchNumber, MatchDecimal, MatchInteger, MatchRegex,
+    InvalidMatcher, log)
 
 
 def test_stringify():
@@ -17,9 +19,10 @@ def test_stringify():
     assert repr(r) == "<MatchType $ {'match': 'type'}>"
 
 
-def test_invalid_match_type():
-    with pytest.raises(RuleFailed):
-        Matcher.get_matcher('$', {'match': 'spam'})
+def test_invalid_match_type(monkeypatch):
+    monkeypatch.setattr(log, 'warning', Mock())
+    assert isinstance(Matcher.get_matcher('$', {'match': 'spam'}), InvalidMatcher)
+    log.warning.assert_called_once()
 
 
 @pytest.mark.parametrize('path, weight', [

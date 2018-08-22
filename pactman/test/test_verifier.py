@@ -9,6 +9,7 @@ import semver
 from restnavigator import Navigator
 
 from pactman.verifier.broker_pact import BrokerPact, BrokerPacts, pact_id
+from pactman.verifier.matching_rule import log, rule_matchers_v2, rule_matchers_v3
 from pactman.verifier.result import Result
 from pactman.verifier.verify import Interaction, RequestVerifier, ResponseVerifier
 
@@ -301,13 +302,27 @@ def test_response_verifier(fake_interaction, mock_pact):
     r.verify(Mock(status_code=200, headers={'Content-Type': 'json-yeah'}, json=Mock(return_value=dict(a='b', c='c'))))
 
 
-def test_build_matching_rules_ignores_rule_with_unknown_type(fake_interaction, mock_pact):
-    fake_interaction['response']['matchingRules'] = {
-        "$": {"match": "SPAM"},
+def test_build_matching_rules_handles_rule_with_unknown_type_v2(monkeypatch, fake_interaction, mock_pact):
+    monkeypatch.setattr(log, 'warning', Mock())
+    rules = rule_matchers_v2({
+        "$.body": {"match": "SPAM"},
         "$.body[*].*": {"match": "type"}
-    }
-    r = ResponseVerifier(mock_pact('2.0.0'), fake_interaction['response'], Mock())
-    assert len(r.matching_rules) == 1
+    })
+    print(rules)
+    assert 2 == len(rules['body'])
+    log.warning.assert_called_once()
+
+
+def test_build_matching_rules_handles_rule_with_unknown_type_v3(monkeypatch, fake_interaction, mock_pact):
+    monkeypatch.setattr(log, 'warning', Mock())
+    rules = rule_matchers_v3({
+        "body": {
+            "$": {"matchers": [{"match": "SPAM"}]},
+            "$[*].*": {"matchers": [{"match": "type"}]}
+        }
+    })
+    assert 2 == len(rules['body'])
+    log.warning.assert_called_once()
 
 
 class FakeResponse:

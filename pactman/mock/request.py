@@ -54,7 +54,7 @@ class Request:
         return request
 
     def generate_v2_matchingRules(self):
-        # TODO verify there's generation *and* verification tests for all these
+        # TODO check there's generation *and* verification tests for all these
         matchingRules = get_matching_rules_v2(self.path, '$.path')
         matchingRules.update(get_matching_rules_v2(self.headers, '$.headers'))
         matchingRules.update(get_matching_rules_v2(self.body, '$.body'))
@@ -62,7 +62,7 @@ class Request:
         return matchingRules
 
     def generate_v3_matchingRules(self):
-        # TODO verify there's generation *and* verification tests for all these
+        # TODO check there's generation *and* verification tests for all these
         matchingRules = get_matching_rules_v3(self.path, 'path')
         matchingRules.update(get_matching_rules_v3(self.headers, 'headers'))
 

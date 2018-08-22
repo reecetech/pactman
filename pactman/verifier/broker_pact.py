@@ -32,6 +32,8 @@ class BrokerPacts:
 
     def get_broker_navigator(self):
         # TODO: remove the manipulation of the URL to allow broker URLs with path components at the root
+        # (this manipulation is here as an interim measure for older usages which specified a more complex
+        # pact broker URL pointing to a different resource)
         url_parts = urllib.parse.urlparse(self.pact_broker_url)
         url = f'{url_parts.scheme}://{url_parts.netloc}/'
         return Navigator.hal(url, default_curie='pb')

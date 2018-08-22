@@ -122,7 +122,9 @@ class Pact(object):
         self._mock_handler.setup(self._interactions)
 
     def start_mocking(self):
-        config = Config(self.consumer.name, self.provider.name, self.log_dir, self.pact_dir, self.file_write_mode)
+        # TODO hmm, the config is looking a lot like this Pact instance...
+        config = Config(self.consumer.name, self.provider.name, self.log_dir, self.pact_dir, self.file_write_mode,
+                        self.version)
         self.port = config.port
         if self.use_mocking_server:
             self._mock_handler = getMockServer(config)

@@ -41,13 +41,13 @@ class Response:
         return response
 
     def generate_v2_matchingRules(self):
-        # TODO verify there's generation *and* verification tests for all these
+        # TODO check there's generation *and* verification tests for all these
         matchingRules = get_matching_rules_v2(self.headers, '$.headers')
         matchingRules.update(get_matching_rules_v2(self.body, '$.body'))
         return matchingRules
 
     def generate_v3_matchingRules(self):
-        # TODO verify there's generation *and* verification tests for all these
+        # TODO check there's generation *and* verification tests for all these
         matchingRules = get_matching_rules_v3(self.headers, 'headers')
         body_rules = get_matching_rules_v3(self.body, '$')
         if body_rules:

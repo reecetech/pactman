@@ -3,17 +3,20 @@ import os
 import os.path
 import urllib.parse
 
+import semver
+
 from ..verifier.verify import RequestVerifier
 from ..verifier.result import Result
 
 
 class Config:
-    def __init__(self, consumer_name, provider_name, log_dir, pact_dir, file_write_mode):
+    def __init__(self, consumer_name, provider_name, log_dir, pact_dir, file_write_mode, version):
         self.consumer_name = consumer_name
         self.provider_name = provider_name
         self.log_dir = log_dir
         self.pact_dir = pact_dir
         self.file_write_mode = file_write_mode
+        self.version = semver.parse(version)
         self.port = self.allocate_port()
         if file_write_mode == 'overwrite':
             filename = self.pact_filename()
@@ -32,10 +35,9 @@ class Config:
 
 
 class MockPact:
-    def __init__(self, provider_name):
-        self.provider = provider_name
-        # TODO: pact-python doesn't know how to define the spec level, so we're hard-coding to 3 for now
-        self.version = dict(major=3)
+    def __init__(self, config):
+        self.provider = config.provider_name
+        self.version = config.version
 
 
 class Request:
@@ -69,7 +71,7 @@ class PactRequestHandler:
 
         interaction = self.get_interaction(url_parts.path)
 
-        pact = MockPact(self.config.provider_name)
+        pact = MockPact(self.config)
         if self.body:
             body = json.loads(self.body)
         else:

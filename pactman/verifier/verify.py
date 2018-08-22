@@ -3,12 +3,7 @@ from urllib.parse import parse_qs, urljoin
 
 import requests
 
-from .matching_rule import (
-    RuleFailed,
-    fold_type,
-    nice_type,
-    rule_matchers,
-    Matcher)
+from .matching_rule import fold_type, nice_type, rule_matchers_v2, rule_matchers_v3, RuleFailed
 from .parse_header import parse_header
 from .paths import format_path
 
@@ -141,21 +136,15 @@ class ResponseVerifier:
         self.status = interaction.get('status', MISSING)
         self.headers = interaction.get('headers', MISSING)
         self.body = interaction.get('body', MISSING)
-        if pact.version['major'] <= 2:
-            self.matching_rules = self.build_matching_rules(interaction.get('matchingRules', {}))
+        rules = interaction.get('matchingRules', {})
+        if pact.version['major'] < 2:
+            # there are no matchingRules in v1
+            self.matching_rules = {}
+        elif pact.version['major'] < 3:
+            self.matching_rules = rule_matchers_v2(rules)
         else:
-            rules = interaction.get('matchingRules', {})
-            self.matching_rules = rule_matchers(rules)
+            self.matching_rules = rule_matchers_v3(rules)
         self.result = result
-
-    def build_matching_rules(self, rules):
-        matching_rules = []
-        for path, rule in rules.items():
-            try:
-                matching_rules.append(Matcher.get_matcher(path, rule))
-            except RuleFailed as e:
-                log.error(f"{self.pact} Ignoring {e}")
-        return matching_rules
 
     def verify(self, response):
         log.debug(f'{self.__class__.__name__}.verify headers={self.headers is not MISSING} '
@@ -269,12 +258,11 @@ class ResponseVerifier:
         return True
 
     def find_rule(self, path):
-        if self.pact.version['major'] <= 2:
-            rules = self.matching_rules
-        else:
+        rules = self.matching_rules.get(path[0])
+        if not rules:
+            return None
+        if self.pact.version['major'] > 2:
             rules = self.matching_rules.get(path[0])
-            if not rules:
-                return None
             # version 3 rules paths don't include the interaction section ("body", "headers", ...)
             path = path[1:]
         weights = sorted((rule.weight(path), i, rule) for i, rule in enumerate(rules))
@@ -333,7 +321,7 @@ class RequestVerifier(ResponseVerifier):
         if self.method is not MISSING and request.method.lower() != self.method.lower():
             return self.result.fail(f'Request method {request.method!r} does not match expected {self.method!r}')
         if self.path is not MISSING:
-            if self.pact.version['major'] >= 3 and self.matching_rules.get('path'):
+            if self.pact.version['major'] > 1 and self.matching_rules.get('path'):
                 return self.apply_rules(request.path, self.path, ['path'])
             if request.path != self.path:
                 return self.result.fail(f'Request path {request.path!r} does not match expected {self.path!r}')
@@ -344,7 +332,7 @@ class RequestVerifier(ResponseVerifier):
             request_query = request.query
             if isinstance(request_query, str):
                 request_query = parse_qs(request_query)
-            if self.pact.version['major'] >= 3 and self.matching_rules.get('query'):
+            if self.pact.version['major'] > 1 and self.matching_rules.get('query'):
                 return self.apply_rules(request_query, spec_query, ['query'])
             if request_query != spec_query:
                 return self.result.fail(f'Request query {request_query!r} does not match expected {spec_query!r}')
