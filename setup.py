@@ -24,7 +24,7 @@ setup(
     long_description_content_type='text/markdown',  # This is important!
     author='ReeceTech',
     author_email='richard.jones@reece.com.au',
-    url='https://github.com/reecetech/pact-python',
+    url='https://github.com/reecetech/pactman',
     entry_points='''
         [console_scripts]
         pact-verifier=pactman.verifier.command_line:main
