@@ -301,6 +301,7 @@ From there you can use pip to install it:
 1.0.8
 
 - Corrected project URL in project metadata (thanks Jonathan Moss)
+- Fix verbose output
 
 1.0.7
 

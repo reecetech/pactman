@@ -70,6 +70,7 @@ parser.add_argument('-q', '--quiet', default=False, action='store_true',
 
 class CaptureResult(Result):
     def __init__(self):
+        log = logging.getLogger('pactman')
         log.handlers = [self]
         log.setLevel(logging.DEBUG)
         self.messages = []
