@@ -298,6 +298,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+1.0.8
+
+- Corrected project URL in project metadata (thanks Jonathan Moss)
+
 1.0.7
 
 - Added some Trove classifiers to aid potential users.
