@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -37,6 +37,15 @@ setup(
         'restnavigator'
         # 'click',
     ],
-    packages=['pactman'],
-    license='MIT, Copyright (c) 2018 ReeceTech'
+    packages=find_packages(),
+    license='MIT, Copyright (c) 2018 ReeceTech',
+    classifiers=[
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Topic :: Software Development :: Testing',
+        'Topic :: Software Development :: Testing :: Mocking',
+        'Topic :: Software Development :: Testing :: Acceptance',
+    ]
 )

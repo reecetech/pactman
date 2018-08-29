@@ -13,6 +13,9 @@ Contains code originally from the [pact-python](https://github.com/pact-foundati
 # How to use pactman
 
 ## Installation
+
+`pactman` requires Python 3.6 to run.
+
 ```
 pip install pactman
 ```
@@ -34,11 +37,9 @@ If the code to fetch a user looked like this:
 ```python
 import requests
 
-
-def user(user_name):
-    """Fetch a user object by user_name from the server."""
-    uri = 'http://localhost:1234/users/' + user_name
-    return requests.get(uri).json()
+def get_user(user_name):
+    response = requests.get(f'http://service.example/users/{user_name}')
+    return response.json()
 ```
 
 Then `Consumer`'s contract test might look something like this:
@@ -72,7 +73,7 @@ class GetUserInfoContract(unittest.TestCase):
     ) .will_respond_with(200, body=expected)
 
     with pact:
-      result = user('UserA')
+      result = get_user('UserA')
 
     self.assertEqual(result, expected)
 
@@ -101,10 +102,12 @@ configured and the interactions verified, use the `setup` and `verify` methods, 
     ) .will_respond_with(200, body=expected)
 
     pact.setup()
-    # Some additional steps before running the code under test
-    result = user('UserA')
-    # Some additional steps before verifying all interactions have occurred
-    pact.verify()
+    try:
+        # Some additional steps before running the code under test
+        result = get_user('UserA')
+        # Some additional steps before verifying all interactions have occurred
+    finally:
+        pact.verify()
 ```
 
 ### Requests
@@ -294,6 +297,18 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+1.0.7
+
+- Added some Trove classifiers to aid potential users.
+
+1.0.6
+
+- Corrected mis-named command-line option.
+
+1.0.5
+
+- Corrected some packaging issues
 
 1.0.4
 
