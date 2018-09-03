@@ -57,7 +57,18 @@ class Interaction:
             r = requests.get(self._get_url(service_url), headers=self._request_headers)
         return self.response.verify(r)
 
+    def service_HEAD(self, service_url):
+        if 'query' in self.request:
+            query = self.request['query']
+            if isinstance(query, str):
+                # version 2 spec used strings, version 3 uses objects
+                query = parse_qs(query)
+            r = requests.head(self._get_url(service_url), params=query, headers=self._request_headers)
+        else:
+            r = requests.head(self._get_url(service_url), headers=self._request_headers)
+        return self.response.verify(r)
     def service_POST(self, service_url):
+
         if not self._content_type_json:
             return self.result.fail(f'POST content type {self._content_type} not implemented in verifier')
         r = requests.post(self._get_url(service_url), json=self._request_payload, headers=self._request_headers)

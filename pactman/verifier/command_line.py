@@ -3,9 +3,9 @@ import logging
 
 from colorama import Fore, Style, init
 
+from ..__version__ import __version__
 from .broker_pact import BrokerPact, BrokerPacts, log
 from .result import Result
-
 
 # TODO: add these options, which exist in the ruby command line?
 '''
@@ -66,6 +66,8 @@ parser.add_argument('-v', '--verbose', default=False, action='store_true',
 
 parser.add_argument('-q', '--quiet', default=False, action='store_true',
                     help='output less information about the verification')
+
+parser.add_argument('-V', '--version', default=False, action='version', version=f'%(prog)s {__version__}')
 
 
 class CaptureResult(Result):

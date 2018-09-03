@@ -248,15 +248,15 @@ EachLike({
 For more information see [Matching](https://docs.pact.io/documentation/matching.html)
 
 ## Verifying Pacts Against a Service
-Run `pact-verifier -h` to see the options available. To run all pacts registered to a provider in a [Pact Broker]:
+Run `pactman-verifier -h` to see the options available. To run all pacts registered to a provider in a [Pact Broker]:
 
-    pact-verifier -b http://pact-broker.example/ <provider name> <provider url> <provider setup url>
+    pactman-verifier -b http://pact-broker.example/ <provider name> <provider url> <provider setup url>
 
 You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
 
 You can pass in a local pact file with `-l`, this will verify the service against the local file instead of the broker:
 
-    pact-verifier -l /tmp/localpact.json <provider name> <provider url> <provider setup url>
+    pactman-verifier -l /tmp/localpact.json <provider name> <provider url> <provider setup url>
 
 ### Provider States
 In many cases, your contracts will need very specific data to exist on the provider
@@ -297,6 +297,13 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+1.1.0
+
+- Renamed the `pact-verifier` command to `pactman-verifier` to avoid
+  confusion with other pre-existing packages that provide a command-line
+  incompatible `pact-verifier` command.
+- Support verification of HEAD requests (oops).
 
 1.0.8
 
