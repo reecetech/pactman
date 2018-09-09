@@ -1,14 +1,32 @@
 # pactman
 
-Python version of Pact, including mocking, generation and verification of Pacts.
-Enables consumer driven contract testing, providing a mock service and DSL for the consumer project, and
-interaction playback and verification for the service provider project.
-Currently supports versions 1.1, 2 and 3 of the [Pact specification].
+Python version of Pact mocking, generation and verification.
+
+Enables [consumer driven contract testing], providing unit test mocking of provider services
+and DSL for the consumer project, and interaction playback and verification for the service
+provider project. Currently supports versions 1.1, 2 and 3 of the [Pact specification].
 
 For more information about what Pact is, and how it can help you
 test your code more efficiently, check out the [Pact documentation].
 
 Contains code originally from the [pact-python](https://github.com/pact-foundation/pact-python) project.
+
+pactman is maintained by the [ReeceTech](https://www.reecetech.com.au/) team as part of their toolkit to
+keep their large (and growing) microservices architecture under control.
+
+## pactman vs pact-python
+
+The key difference is all functionality is implemented in Python, rather than shelling out or forking
+to the ruby implementation. This allows for a much nicer mocking user experience (it mocks urllib3
+directly), is faster, less messy configuration (multiple providers means multiple ruby processes spawned
+on different ports).
+
+It also supports a broader set of the pact specification (versions 1.1 through to 3).
+
+The pact verifier has been engineered from the start to talk to a pact broker (both to discover pacts
+and to return verification results).
+
+There’s a few other quality of life improvements, but those are the big ones.
 
 # How to use pactman
 
@@ -298,6 +316,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+1.2.0 (unreleased)
+
+- Tweaked README for clarity
+
 1.1.0
 
 - Renamed the `pact-verifier` command to `pactman-verifier` to avoid
@@ -326,7 +348,7 @@ From there you can use pip to install it:
 
 - Initial release of pactman, including ReeceTech's pact-verifier version 3.17 and pact-python version 0.17.0
 
-
+[consumer driven contract testing]: https://2018.pycon-au.org/talks/44811-pact-in-python/
 [context manager]: https://en.wikibooks.org/wiki/Python_Programming/Context_Managers
 [Pact]: https://www.gitbook.com/book/pact-foundation/pact/details
 [Pact Broker]: https://docs.pact.io/documentation/sharings_pacts.html
