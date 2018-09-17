@@ -316,9 +316,10 @@ From there you can use pip to install it:
 
 ## Release History
 
-1.2.0 (unreleased)
+1.2.0
 
-- Tweaked README for clarity
+- Corrected use of format_path in command line error handling.
+- Tweaked README for clarity.
 
 1.1.0
 

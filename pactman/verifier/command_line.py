@@ -5,6 +5,7 @@ from colorama import Fore, Style, init
 
 from ..__version__ import __version__
 from .broker_pact import BrokerPact, BrokerPacts, log
+from .paths import format_path
 from .result import Result
 
 # TODO: add these options, which exist in the ruby command line?
@@ -98,7 +99,7 @@ class CaptureResult(Result):
     def fail(self, message, path=None):
         self.success = self.FAIL
         if path:
-            message += ' at ' + self.format_path(path)
+            message += ' at ' + format_path(path)
         log.error(message)
         return not message
 
