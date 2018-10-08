@@ -316,6 +316,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.0.0
+
+- Correctly determine pact verification result when publishing to broker.
+
 1.2.0
 
 - Corrected use of format_path in command line error handling.

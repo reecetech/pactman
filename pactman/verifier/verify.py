@@ -17,9 +17,9 @@ class ProviderStateError(Exception):
 
 
 class Interaction:
-    def __init__(self, pact, interaction, result):
+    def __init__(self, pact, interaction, result_factory):
         self.pact = pact
-        self.result = result
+        self.result = result_factory()
         self.description = interaction['description']
         self.request = interaction['request']
         self.providerState = interaction.get('providerState')
@@ -67,8 +67,8 @@ class Interaction:
         else:
             r = requests.head(self._get_url(service_url), headers=self._request_headers)
         return self.response.verify(r)
-    def service_POST(self, service_url):
 
+    def service_POST(self, service_url):
         if not self._content_type_json:
             return self.result.fail(f'POST content type {self._content_type} not implemented in verifier')
         r = requests.post(self._get_url(service_url), json=self._request_payload, headers=self._request_headers)

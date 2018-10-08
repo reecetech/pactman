@@ -58,6 +58,11 @@ def mock_result():
     return result
 
 
+@pytest.fixture
+def mock_result_factory(mock_result):
+    return Mock(return_value=mock_result)
+
+
 def test_pact_id():
     assert pact_id(1) == repr(1)
 
@@ -78,12 +83,33 @@ def test_pact_loading(monkeypatch, fake_pact):
         assert e.description == 'dummy'
 
 
-def test_pact_publish(fake_pact):
-    mock_result = Mock()
-    mock_pact = {'publish-verification-results': mock_result}
-    p = BrokerPact(fake_pact, Mock(), mock_pact)
+def test_pact_publish_uses_interaction_result(fake_pact):
+    result_factory = Mock(return_value=Mock(success=True))
+    mock_result_publisher = Mock()
+    broker_pact = {'publish-verification-results': mock_result_publisher}
+    p = BrokerPact(fake_pact, result_factory, broker_pact)
     p.publish_result('1.0')
-    mock_result.create.assert_called_once()
+    mock_result_publisher.create.assert_called_once()
+    payload = mock_result_publisher.create.call_args[0][0]
+    assert payload == {"success": True, "providerApplicationVersion": "1.0"}
+
+
+@pytest.mark.parametrize('first_success, second_success, combined_success', [
+    (False, True, False),
+    (True, False, False),
+    (True, True, True),
+])
+def test_pact_publish_aggregates_interaction_results(
+    fake_pact, fake_interaction, first_success, second_success, combined_success
+):
+    result_factory = Mock()
+    fake_pact = {**fake_pact, 'interactions': [fake_interaction, fake_interaction]}
+    result_factory.side_effect = [Mock(success=first_success), Mock(success=second_success)]
+    mock_result_publisher = Mock()
+    broker_pact = {'publish-verification-results': mock_result_publisher}
+    BrokerPact(fake_pact, result_factory, broker_pact).publish_result('1.0')
+    payload = mock_result_publisher.create.call_args[0][0]
+    assert payload == {"success": combined_success, "providerApplicationVersion": "1.0"}
 
 
 def test_pact_file_loading(fake_interaction):
@@ -94,16 +120,16 @@ def test_pact_file_loading(fake_interaction):
         assert e.description == 'dummy'
 
 
-def test_interaction(mock_pact, mock_result, fake_interaction):
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+def test_interaction(mock_pact, mock_result_factory, fake_interaction):
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     assert repr(i) == 'SpamConsumer:dummy'
 
 
-def test_interaction_verify_get(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_get(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, 'post', Mock())
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
 
     requests.post.assert_not_called()
@@ -111,22 +137,22 @@ def test_interaction_verify_get(monkeypatch, mock_pact, mock_result, fake_intera
     i.response.verify.assert_called()
 
 
-def test_interaction_verify_method_not_supported(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_method_not_supported(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['request']['method'] = 'FLEBBLE'
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
     i.result.fail.assert_called_with("Request method FLEBBLE not implemented in verifier")
     i.response.verify.assert_not_called()
 
 
-def test_interaction_verify_qs(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_qs(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, 'post', Mock())
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['request']['query'] = 'a=b&c=d'
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
 
     requests.get.assert_called_with(
@@ -137,13 +163,13 @@ def test_interaction_verify_qs(monkeypatch, mock_pact, mock_result, fake_interac
     i.response.verify.assert_called()
 
 
-def test_interaction_verify_post(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_post(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, 'post', Mock())
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['request']['method'] = 'POST'
     fake_interaction['request']['body'] = 'spam'
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
 
     requests.get.assert_not_called()
@@ -155,19 +181,21 @@ def test_interaction_verify_post(monkeypatch, mock_pact, mock_result, fake_inter
     i.response.verify.assert_called()
 
 
-def test_interaction_verify_post_unsupported_content_type(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_post_unsupported_content_type(
+    monkeypatch, mock_pact, mock_result_factory, fake_interaction
+):
     monkeypatch.setattr(requests, 'post', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['request']['method'] = 'POST'
     fake_interaction['request']['headers'] = {'Content-Type': 'spam/ham'}
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
     i.result.fail.assert_called_with("POST content type spam/ham not implemented in verifier")
 
     requests.post.assert_not_called()
 
 
-def test_interaction_verify_delete(monkeypatch, mock_pact, mock_result):
+def test_interaction_verify_delete(monkeypatch, mock_pact, mock_result_factory):
     monkeypatch.setattr(requests, 'delete', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction = {
@@ -175,20 +203,20 @@ def test_interaction_verify_delete(monkeypatch, mock_pact, mock_result):
         'request': {'method': 'DELETE', 'path': '/diary-notes/diary-note/1'},
         'response': {'headers': {}, 'status': 200}
     }
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
 
     requests.delete.assert_called_with('http://provider.example/diary-notes/diary-note/1', headers={})
     i.response.verify.assert_called()
 
 
-def test_interaction_verify_put(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_put(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, 'put', Mock())
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['request']['method'] = 'PUT'
     fake_interaction['request']['body'] = 'spam'
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
 
     requests.get.assert_not_called()
@@ -200,25 +228,25 @@ def test_interaction_verify_put(monkeypatch, mock_pact, mock_result, fake_intera
     i.response.verify.assert_called()
 
 
-def test_interaction_verify_put_unsupported_content_type(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_put_unsupported_content_type(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, 'put', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['request']['method'] = 'PUT'
     fake_interaction['request']['headers'] = {'Content-Type': 'spam/ham'}
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
     i.result.fail.assert_called_with("PUT content type spam/ham not implemented in verifier")
 
     requests.put.assert_not_called()
 
 
-def test_interaction_verify_patch(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_patch(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, 'patch', Mock())
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['request']['method'] = 'PATCH'
     fake_interaction['request']['body'] = 'spam'
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
     requests.get.assert_not_called()
     requests.patch.assert_called_with(
@@ -229,19 +257,21 @@ def test_interaction_verify_patch(monkeypatch, mock_pact, mock_result, fake_inte
     i.response.verify.assert_called()
 
 
-def test_interaction_verify_patch_unsupported_content_type(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_verify_patch_unsupported_content_type(
+    monkeypatch, mock_pact, mock_result_factory, fake_interaction
+):
     monkeypatch.setattr(requests, 'patch', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['request']['method'] = 'PATCH'
     fake_interaction['request']['headers'] = {'Content-Type': 'spam/ham'}
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
     i.result.fail.assert_called_with("PATCH content type spam/ham not implemented in verifier")
     requests.patch.assert_not_called()
 
 
 @pytest.mark.parametrize('method', ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'])
-def test_interaction_sends_headers(monkeypatch, mock_pact, mock_result, fake_interaction, method):
+def test_interaction_sends_headers(monkeypatch, mock_pact, mock_result_factory, fake_interaction, method):
     headers = {'key1': 'value1'}
     requests_method = Mock()
     monkeypatch.setattr(requests, method.lower(), requests_method)
@@ -249,19 +279,19 @@ def test_interaction_sends_headers(monkeypatch, mock_pact, mock_result, fake_int
     fake_interaction['request']['method'] = method
     fake_interaction['request']['body'] = 'body-data'
     fake_interaction['request']['headers'] = headers
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
     request_kwargs = requests_method.call_args[1]
     assert request_kwargs["headers"] == headers
 
 
 @pytest.mark.parametrize('option, arg', [('providerState', 'state'), ('providerStates', 'states')])
-def test_interaction_verify_with_setup(monkeypatch, mock_pact, mock_result, fake_interaction, option, arg):
+def test_interaction_verify_with_setup(monkeypatch, mock_pact, mock_result_factory, fake_interaction, option, arg):
     monkeypatch.setattr(requests, 'post', Mock(return_value=Mock(status_code=200)))
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction[option] = 'some state'
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
 
     requests.post.assert_called_with(
@@ -272,22 +302,22 @@ def test_interaction_verify_with_setup(monkeypatch, mock_pact, mock_result, fake
 
 
 @pytest.mark.parametrize('option', ['providerState', 'providerStates'])
-def test_interaction_setup_fails(monkeypatch, mock_pact, mock_result, fake_interaction, option):
+def test_interaction_setup_fails(monkeypatch, mock_pact, mock_result_factory, fake_interaction, option):
     monkeypatch.setattr(requests, 'post', Mock(return_value=Mock(status_code=400, text='fail')))
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction[option] = 'some state'
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
     i.result.fail.assert_called_with("Invalid provider state 'some state'")
 
 
-def test_interaction_setup_connection_fails(monkeypatch, mock_pact, mock_result, fake_interaction):
+def test_interaction_setup_connection_fails(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, 'post', Mock(side_effect=requests.exceptions.ConnectionError('barf')))
     monkeypatch.setattr(requests, 'get', Mock())
     # monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['providerState'] = 'some state'
-    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result)
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.set_up_state('http://provider.example/pact-setup/', 'state', 'some state')
     i.result.fail.assert_called_once()
 

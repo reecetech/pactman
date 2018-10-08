@@ -1,5 +1,6 @@
 import argparse
 import logging
+from functools import partial
 
 from colorama import Fore, Style, init
 
@@ -72,12 +73,12 @@ parser.add_argument('-V', '--version', default=False, action='version', version=
 
 
 class CaptureResult(Result):
-    def __init__(self):
+    def __init__(self, *, level=logging.WARNING):
         log = logging.getLogger('pactman')
         log.handlers = [self]
         log.setLevel(logging.DEBUG)
         self.messages = []
-        self.level = logging.WARNING
+        self.level = level
         self.current_consumer = None
 
     def start(self, interaction):
@@ -114,22 +115,22 @@ class CaptureResult(Result):
 
 def main():
     init(autoreset=True)
-    result = CaptureResult()
     args = parser.parse_args()
     provider_version = args.provider_version or args.provider_app_version
     if args.publish_verification_results and not provider_version:
         print('Provider version is required to publish results to the broker')
         return False
     if args.quiet:
-        result.level = logging.WARNING
+        result_log_level = logging.WARNING
     elif args.verbose:
-        result.level = logging.DEBUG
+        result_log_level = logging.DEBUG
     else:
-        result.level = logging.INFO
+        result_log_level = logging.INFO
+    result_factory = partial(CaptureResult, level=result_log_level)
     if args.local_pact_file:
-        pacts = [BrokerPact.load_file(args.local_pact_file, result)]
+        pacts = [BrokerPact.load_file(args.local_pact_file, result_factory)]
     else:
-        pacts = BrokerPacts(args.provider_name, args.broker_url, result).consumers()
+        pacts = BrokerPacts(args.provider_name, args.broker_url, result_factory).consumers()
     success = True
     for pact in pacts:
         if args.consumer and pact.consumer != args.consumer:
