@@ -23,12 +23,12 @@ def pact_id(param):
 
 
 class BrokerPacts:
-    def __init__(self, provider_name, pact_broker_url=None, result=LoggedResult()):
+    def __init__(self, provider_name, pact_broker_url=None, result_factory=LoggedResult):
         self.provider_name = provider_name
         self.pact_broker_url = pact_broker_url or os.environ.get('PACT_BROKER_URL')
         if not self.pact_broker_url:
             raise ValueError('pact broker URL must be specified')
-        self.result = result
+        self.result_factory = result_factory
 
     def get_broker_navigator(self):
         # TODO: remove the manipulation of the URL to allow broker URLs with path components at the root
@@ -44,7 +44,7 @@ class BrokerPacts:
         broker_provider.fetch()
         for broker_pact in broker_provider['pacts']:
             pact_contents = broker_pact.fetch()
-            yield BrokerPact(pact_contents, self.result, broker_pact)
+            yield BrokerPact(pact_contents, self.result_factory, broker_pact)
 
     def all_interactions(self):
         for pact in self.consumers():
@@ -52,8 +52,7 @@ class BrokerPacts:
 
 
 class BrokerPact:
-    def __init__(self, pact, result, broker_pact=None):
-        self.result = result
+    def __init__(self, pact, result_factory, broker_pact=None):
         self.pact = pact
         self.provider = pact['provider']['name']
         self.consumer = pact['consumer']['name']
@@ -63,7 +62,7 @@ class BrokerPact:
             self.version = semver.parse(self.metadata['pactSpecification']['version'])
         else:
             self.version = semver.parse(self.metadata['pact-specification']['version'])
-        self.interactions = [Interaction(self, interaction, self.result) for interaction in pact['interactions']]
+        self.interactions = [Interaction(self, interaction, result_factory) for interaction in pact['interactions']]
         self.broker_pact = broker_pact
 
     def __str__(self):
@@ -72,10 +71,11 @@ class BrokerPact:
     def publish_result(self, version):
         if self.broker_pact is None:
             return
-        self.broker_pact['publish-verification-results'].create(dict(success=self.result.success,
+        success = all(interaction.result.success for interaction in self.interactions)
+        self.broker_pact['publish-verification-results'].create(dict(success=success,
                                                                      providerApplicationVersion=version))
 
     @classmethod
-    def load_file(cls, filename, result=LoggedResult()):
+    def load_file(cls, filename, result_factory=LoggedResult):
         with open(filename) as file:
-            return cls(json.load(file), result)
+            return cls(json.load(file), result_factory)
