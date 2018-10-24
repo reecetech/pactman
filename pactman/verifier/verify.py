@@ -128,7 +128,7 @@ class Interaction:
 
     @property
     def _request_payload(self):
-        return self.request['body']
+        return self.request.get('body')
 
     @property
     def _content_type_json(self):
