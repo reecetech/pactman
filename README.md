@@ -316,6 +316,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.1.0
+
+- Corrected the definition of request payload when there is no `body` in the request
+
 2.0.0
 
 - Correctly determine pact verification result when publishing to broker.
