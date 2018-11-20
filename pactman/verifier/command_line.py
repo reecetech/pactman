@@ -74,15 +74,15 @@ parser.add_argument('-V', '--version', default=False, action='version', version=
 
 class CaptureResult(Result):
     def __init__(self, *, level=logging.WARNING):
-        log = logging.getLogger('pactman')
-        log.handlers = [self]
-        log.setLevel(logging.DEBUG)
         self.messages = []
         self.level = level
         self.current_consumer = None
 
     def start(self, interaction):
         super().start(interaction)
+        log = logging.getLogger('pactman')
+        log.handlers = [self]
+        log.setLevel(logging.DEBUG)
         self.messages[:] = []
         if self.current_consumer != interaction.pact.consumer:
             print(f'{Style.BRIGHT}Consumer: {interaction.pact.consumer}')
