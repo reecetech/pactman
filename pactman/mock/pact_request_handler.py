@@ -16,7 +16,8 @@ class Config:
         self.log_dir = log_dir
         self.pact_dir = pact_dir
         self.file_write_mode = file_write_mode
-        self.version = semver.parse(version)
+        self.version = version
+        self.semver = semver.parse(version)
         self.port = self.allocate_port()
         if file_write_mode == 'overwrite':
             filename = self.pact_filename()
@@ -38,6 +39,7 @@ class MockPact:
     def __init__(self, config):
         self.provider = config.provider_name
         self.version = config.version
+        self.semver = config.semver
 
 
 class Request:
@@ -101,6 +103,17 @@ class PactRequestHandler:
     def write_pact(self, interaction):
         config = self.config
         filename = self.config.pact_filename()
+        consumer_name = config.consumer_name
+        provider_name = config.provider_name
+        if config.semver["major"] >= 3:
+            consumer_name = {"name": consumer_name}
+            provider_name = {"name": provider_name}
+
+        # ensure destination directory exists
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            raise ValueError(f'Pact destination directory {dirname} does not exist')
+
         if os.path.exists(filename):
             with open(filename) as f:
                 pact = json.load(f)
@@ -114,10 +127,10 @@ class PactRequestHandler:
             pact['interactions'].append(interaction)
         else:
             pact = dict(
-                consumer=config.consumer_name,
-                provider=config.provider_name,
+                consumer=consumer_name,
+                provider=provider_name,
                 interactions=[interaction],
-                metadata=dict(pactSpecification=dict(version='3.0.0')),
+                metadata=dict(pactSpecification=dict(version=self.config.version)),
             )
 
         with open(filename, 'w') as f:

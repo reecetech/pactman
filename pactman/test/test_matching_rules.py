@@ -10,7 +10,7 @@ from pactman.verifier.matching_rule import (
     split_path,
     weight_path,
     MatchType, MatchNull, MatchInclude, MatchEquality, MatchNumber, MatchDecimal, MatchInteger, MatchRegex,
-    InvalidMatcher, log)
+    InvalidMatcher, log, rule_matchers_v3, rule_matchers_v2)
 
 
 def test_stringify():
@@ -34,8 +34,8 @@ def test_invalid_match_type(monkeypatch):
 ])
 def test_weightings(path, weight):
     rule = Matcher(path, {'match': 'type'})
-    assert rule.weight(['body', 'item1', 'level', 1, 'id']) == weight
-    assert rule.weight(['body', 'item2', 'spam', 1, 'id']) == 0
+    assert rule.weight(['$', 'body', 'item1', 'level', 1, 'id']) == weight
+    assert rule.weight(['$', 'body', 'item2', 'spam', 1, 'id']) == 0
 
 
 @pytest.mark.parametrize('path, result', [
@@ -176,3 +176,25 @@ def test_max_ignored():
 ])
 def test_fold_type(source, result):
     assert fold_type(source) == result
+
+
+def test_build_matching_rules_handles_rule_with_unknown_type_v2(monkeypatch):
+    monkeypatch.setattr(log, 'warning', Mock())
+    rules = rule_matchers_v2({
+        "$.body": {"match": "SPAM"},
+        "$.body[*].*": {"match": "type"}
+    })
+    assert 2 == len(rules['body'])
+    log.warning.assert_called_once()
+
+
+def test_build_matching_rules_handles_rule_with_unknown_type_v3(monkeypatch):
+    monkeypatch.setattr(log, 'warning', Mock())
+    rules = rule_matchers_v3({
+        "body": {
+            "$": {"matchers": [{"match": "SPAM"}]},
+            "$[*].*": {"matchers": [{"match": "type"}]}
+        }
+    })
+    assert 2 == len(rules['body'])
+    log.warning.assert_called_once()

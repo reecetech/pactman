@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import os
 
+import semver
 from pactman.mock.request import Request
 from pactman.mock.response import Response
 from .mock_server import getMockServer
@@ -95,6 +96,7 @@ class Pact(object):
         self.sslcert = sslcert
         self.sslkey = sslkey
         self.version = version
+        self.semver = semver.parse(self.version)
         self.use_mocking_server = use_mocking_server
         self._interactions = []
         self._mock_handler = None

@@ -148,10 +148,10 @@ class ResponseVerifier:
         self.headers = interaction.get('headers', MISSING)
         self.body = interaction.get('body', MISSING)
         rules = interaction.get('matchingRules', {})
-        if pact.version['major'] < 2:
+        if pact.semver['major'] < 2:
             # there are no matchingRules in v1
             self.matching_rules = {}
-        elif pact.version['major'] < 3:
+        elif pact.semver['major'] < 3:
             self.matching_rules = rule_matchers_v2(rules)
         else:
             self.matching_rules = rule_matchers_v3(rules)
@@ -164,6 +164,7 @@ class ResponseVerifier:
             log.debug(f'.. response {response.text}')
             return self.result.fail(f'{self.interaction_name} status code {response.status_code} is not '
                                     f'expected {self.status}')
+        print('ASDFASDFASDF', self.headers)
         if self.headers is not MISSING:
             for header in self.headers:
                 expected = self.headers[header]
@@ -245,11 +246,12 @@ class ResponseVerifier:
         return True
 
     def apply_rules(self, data, spec, path):
+        # given some actual data and a pact spec at a certain path, check any rules for that path
         log.debug(f'apply_rules data={data!r} spec={spec!r} path={format_path(path)}')
         rule = self.find_rule(path)
+        log.debug(f'... rule lookup got {rule}')
         if rule:
             try:
-                log.debug(f'... applying {rule}')
                 rule.apply(data, spec, path)
             except RuleFailed as e:
                 log.debug(f'... failed: {e}')
@@ -265,18 +267,26 @@ class ResponseVerifier:
             r = self.apply_rules_dict(data, spec, path)
             log.debug(f'apply_rules {format_path(path)} DONE = {r!r}')
             return r
-
+        elif not rule:
+            # in the absence of a rule, and we're at a leaf, we fall back on equality
+            log.debug('... falling back on equality matching')
+            return data == spec
         return True
 
     def find_rule(self, path):
-        rules = self.matching_rules.get(path[0])
-        if not rules:
+        section = path[0]
+        section_rules = self.matching_rules.get(section)
+        if not section_rules:
             return None
-        if self.pact.version['major'] > 2:
-            rules = self.matching_rules.get(path[0])
+        log.debug(f'find_rule got {section_rules} for section {section}')
+        if self.pact.semver['major'] > 2:
             # version 3 rules paths don't include the interaction section ("body", "headers", ...)
             path = path[1:]
-        weights = sorted((rule.weight(path), i, rule) for i, rule in enumerate(rules))
+        if section == 'body':
+            # but body paths always have a '$' at the start, yes
+            path = ['$'] + path
+        weights = sorted((rule.weight(path), i, rule) for i, rule in enumerate(section_rules))
+        log.debug(f'... path {path} got weights {weights}')
         weight, i, rule = weights[-1]
         if weight:
             return rule
@@ -288,19 +298,24 @@ class ResponseVerifier:
         # Attempt to find a matchingRule for this path elements in the array - if we find one then we use the first
         # spec value (since they must all satisfy the matchingRule and there may only be one) otherwise
         # we are comparing value to value so pass through the actual value from the spec.
+        log.debug('looking for a rule')
         rule = self.find_rule(path + [0])
         if rule is not None:
-            log.debug(f'... got a rule')
-        else:
-            log.debug(f'... performing elementwise rule application')
+            log.debug(f'... got a rule {rule}, applying to first elements')
+            try:
+                rule.apply(data[0], spec[0], path)
+            except RuleFailed as e:
+                log.debug(f'... failed: {e}')
+                return self.result.fail(str(e), path)
+        log.debug(f'... performing elementwise rule application')
         for i, data_elem in enumerate(data):
             # always apply matching rules using the first element of the spec array
             spec_elem = spec[0]
             p = path + [i]
             if not self.apply_rules(data_elem, spec_elem, p):
-                log.debug(f'apply_rules {path!r} failing on item {i}')
+                log.debug(f'apply_rules_array {path!r} failing on item {i}')
                 return False
-        log.debug(f'validate_type {path!r} DONE = True')
+        log.debug(f'apply_rules_array {path!r} DONE = True')
         return True
 
     def apply_rules_dict(self, data, spec, path):
@@ -332,22 +347,28 @@ class RequestVerifier(ResponseVerifier):
         if self.method is not MISSING and request.method.lower() != self.method.lower():
             return self.result.fail(f'Request method {request.method!r} does not match expected {self.method!r}')
         if self.path is not MISSING:
-            if self.pact.version['major'] > 1 and self.matching_rules.get('path'):
+            if self.pact.semver['major'] > 1 and self.matching_rules.get('path'):
                 return self.apply_rules(request.path, self.path, ['path'])
             if request.path != self.path:
                 return self.result.fail(f'Request path {request.path!r} does not match expected {self.path!r}')
         if self.query is not MISSING:
-            spec_query = self.query
-            if self.pact.version['major'] < 3:
-                spec_query = parse_qs(spec_query)
-            request_query = request.query
-            if isinstance(request_query, str):
-                request_query = parse_qs(request_query)
-            if self.pact.version['major'] > 1 and self.matching_rules.get('query'):
-                return self.apply_rules(request_query, spec_query, ['query'])
-            if request_query != spec_query:
-                return self.result.fail(f'Request query {request_query!r} does not match expected {spec_query!r}')
+            if not self.verify_query(self.query, request):
+                return False
         return super().verify(request)
+
+    def verify_query(self, spec_query, request):
+        if self.pact.semver['major'] < 3:
+            spec_query = parse_qs(spec_query)
+        request_query = request.query
+        if isinstance(request_query, str):
+            request_query = parse_qs(request_query)
+        if self.pact.semver['major'] > 1 and self.matching_rules.get('query'):
+            if not self.apply_rules(request_query, spec_query, ['query']):
+                return self.result.fail(f'Request query params {request_query} do not match '
+                                        f'expected {spec_query}')
+        elif request_query != spec_query:
+            return self.result.fail(f'Request query {request_query!r} does not match expected {spec_query!r}')
+        return True
 
     def compare_dict(self, data, spec, path):
         if not super().compare_dict(data, spec, path):

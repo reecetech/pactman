@@ -59,9 +59,10 @@ class BrokerPact:
         self.metadata = pact['metadata']
         if 'pactSpecification' in self.metadata:
             # the Ruby implementation generates non-compliant metadata, handle that :-(
-            self.version = semver.parse(self.metadata['pactSpecification']['version'])
+            self.version = self.metadata['pactSpecification']['version']
         else:
-            self.version = semver.parse(self.metadata['pact-specification']['version'])
+            self.version = self.metadata['pact-specification']['version']
+        self.semver = semver.parse(self.version)
         self.interactions = [Interaction(self, interaction, result_factory) for interaction in pact['interactions']]
         self.broker_pact = broker_pact
 

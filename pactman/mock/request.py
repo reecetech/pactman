@@ -70,7 +70,17 @@ class Request:
         body_rules = get_matching_rules_v3(self.body, '$')
         if body_rules:
             matchingRules['body'] = body_rules
-        query_rules = get_matching_rules_v3(self.query, '$.query')
+        query_rules = get_matching_rules_v3(self.query, 'query')
         if query_rules:
-            matchingRules['query'] = query_rules['$.query']
+            expand_query_rules(query_rules)
+            matchingRules['query'] = query_rules
         return matchingRules
+
+
+def expand_query_rules(rules):
+    # the matchers will be coded to JSON paths, and we need to extract them out to a dictionary
+    # the keys generated will look like 'query.param[*]' and we need to extract "param"
+    for k in list(rules):
+        matchers = rules.pop(k)
+        rule_param = k[6:-3]
+        rules[rule_param] = matchers

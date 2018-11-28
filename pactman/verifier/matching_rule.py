@@ -128,7 +128,8 @@ class Matcher:
 
         Return the weight, or 0 if there is no match.
         """
-        return weight_path(list(split_path(self.path)), ['$'] + element_path)
+        print('weighting', element_path, 'for', self)
+        return weight_path(list(split_path(self.path)), element_path)
 
     def check_min(self, data, path):
         if 'min' not in self.rule:
@@ -350,7 +351,12 @@ def rule_matchers_v3(rules):
         # "path" rules are a bit different - there's no jsonpath as there's only a single value to compare, so we
         # hard-code the path to '$' which always matches when looking for weighted path matches
         matchers['path'] = [MultipleMatchers('$', **rules['path'])]
-    for section in ['query', 'header', 'body']:
+    if 'query' in rules:
+        # "query" rules are a bit different too - matchingRules are a flat single-level dictionary of keys which map to
+        # array elements, so alter the path such that the rule maps to that array
+        matchers['query'] = [Matcher.get_matcher(path + '[*]', rule)
+                             for path, rule in rules['query'].items()]
+    for section in ['header', 'body']:
         if section in rules:
             matchers[section] = [Matcher.get_matcher(path, rule)
                                  for path, rule in rules[section].items()]

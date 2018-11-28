@@ -1,0 +1,45 @@
+{
+  "match": false,
+  "comment": "Queries with a single like and and explicit match will fail",
+  "expected" : {
+    "method": "GET",
+    "path": "/path",
+    "query": {
+      "alligator": ["Mary"],
+      "hippo": ["John"]
+    },
+    "headers": {"Accept": "alligators"},
+    "matchingRules": {
+      "query": {
+        "hippo": {
+          "matchers": [
+            {
+              "match": "type"
+            }
+          ]
+        }
+      },
+      "header": {
+        "Accept": {
+          "matchers": [
+            {
+              "match": "regex",
+              "regex": "\\w+"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "actual": {
+    "method": "GET",
+    "path": "/path",
+    "query": {
+      "alligator": ["Alex"],
+      "hippo": ["Fred"]
+    },
+    "headers": {
+      "Accept": "godzilla"
+    }
+  }
+}

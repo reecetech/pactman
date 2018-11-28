@@ -199,6 +199,17 @@ def from_term(term):
         raise ValueError('Unknown type: %s' % type(term))
 
 
+try:
+    import pact as pact_python
+    LIKE_CLASSES = (Like, pact_python.Like)
+    EACHLIKE_CLASSES = (EachLike, pact_python.EachLike)
+    TERM_CLASSES = (Term, pact_python.Term)
+except ImportError:
+    LIKE_CLASSES = (Like,)
+    EACHLIKE_CLASSES = (EachLike,)
+    TERM_CLASSES = (Term,)
+
+
 def get_generated_values(input):
     """
     Resolve (nested) Matchers to their generated values for assertion.
@@ -216,11 +227,11 @@ def get_generated_values(input):
         return {k: get_generated_values(v) for k, v in input.items()}
     if isinstance(input, list):
         return [get_generated_values(t) for i, t in enumerate(input)]
-    elif isinstance(input, Like):
+    elif isinstance(input, LIKE_CLASSES):
         return get_generated_values(input.matcher)
-    elif isinstance(input, EachLike):
+    elif isinstance(input, EACHLIKE_CLASSES):
         return [get_generated_values(input.matcher)] * input.minimum
-    elif isinstance(input, Term):
+    elif isinstance(input, TERM_CLASSES):
         return input.generate()['data']['generate']
     else:
         raise ValueError('Unknown type: %s' % type(input))
@@ -241,15 +252,15 @@ def get_matching_rules_v2(input, path):
             sub_path = f'{path}[*]'
             rules.update(get_matching_rules_v2(v, sub_path))
         return rules
-    elif isinstance(input, Like):
+    elif isinstance(input, LIKE_CLASSES):
         rules = {path: {'match': 'type'}}
         rules.update(get_matching_rules_v2(input.matcher, path))
         return rules
-    elif isinstance(input, EachLike):
+    elif isinstance(input, EACHLIKE_CLASSES):
         rules = {path: {'match': 'type', 'min': input.minimum}}
         rules.update(get_matching_rules_v2(input.matcher, path))
         return rules
-    elif isinstance(input, Term):
+    elif isinstance(input, TERM_CLASSES):
         return {path: {'regex': input.matcher}}
     else:
         raise ValueError('Unknown type: %s' % type(input))
@@ -271,18 +282,15 @@ def get_matching_rules_v3(input, path):
             rules.update(get_matching_rules_v3(v, sub_path))
         return rules
 
-    if not path.startswith('$.body'):
-        raise ValueError(f'Pact specification v2 does not allow non-body {input}')
-
-    if isinstance(input, Like):
+    if isinstance(input, LIKE_CLASSES):
         rules = {path: {'matchers': [{'match': 'type'}]}}
         rules.update(get_matching_rules_v3(input.matcher, path))
         return rules
-    elif isinstance(input, EachLike):
+    elif isinstance(input, EACHLIKE_CLASSES):
         rules = {path: {'matchers': [{'match': 'type', 'min': input.minimum}]}}
         rules.update(get_matching_rules_v3(input.matcher, path))
         return rules
-    elif isinstance(input, Term):
+    elif isinstance(input, TERM_CLASSES):
         return {path: {'matchers': [{'match': 'regex', 'regex': input.matcher}]}}
     else:
         raise ValueError('Unknown type: %s' % type(input))
