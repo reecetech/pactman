@@ -114,7 +114,10 @@ class Interaction:
                 reason = str(e)
             return self.result.fail(f'Unable to configure provider state {state!r} at {setup_url}: {reason}')
         if r.status_code != 200:
-            log.debug(f'HTTP {r.status_code} from provider state setup URL: {r.text}')
+            text = repr(r.text)
+            if len(text) > 60:
+                text = text[:60] + '...' + text[-1]
+            log.debug(f'HTTP {r.status_code} from provider state setup URL: {text}')
             return self.result.fail(f'Invalid provider state {state!r}')
         log.info(f'Using provider state {state!r}')
         return True

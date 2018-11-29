@@ -56,7 +56,8 @@ def weight_path(spec_path, element_path):
     In spec version 2 paths should always start with ['$', 'body'] and contain object element names or array indexes.
 
     In spec version 3 the path "context" element (like 'body') is moved outside of the path, and the path contains
-    just the elements inside the path, always starting at the root '$', so the shortest path is now ['$'].
+    just the elements inside the path. For bodies this always starts at the root '$', so the shortest body path is
+    now ['$'].
 
     Weighting is calculated as:
 
@@ -69,7 +70,8 @@ def weight_path(spec_path, element_path):
 
     Return the numeric score.
     """
-    if len(spec_path) != len(element_path):
+    # if the spec path is more specific than the element path it'll never match
+    if len(spec_path) > len(element_path):
         return 0
     score = 1
     for spec, element in zip(spec_path, element_path):
@@ -115,7 +117,7 @@ class Matcher:
         self.rule = rule
 
     def __repr__(self):
-        return f'<{self.__class__.__name__} {self.path} {self.rule}>'
+        return f'<{self.__class__.__name__} path={self.path!r} rule={self.rule}>'
 
     def __str__(self):
         return f'Rule match by {self.rule} at {self.path}'

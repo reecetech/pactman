@@ -1,6 +1,6 @@
 import pytest
 import semver
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import Mock, mock_open, patch, call
 import os
 from pactman.mock.pact_request_handler import Config, MockPact, PactRequestHandler
 
@@ -27,8 +27,7 @@ def test_config_init(monkeypatch, file_write_mode):
     file_name = "/tmp/pact/JSON"
     Config.pact_filename.return_value = file_name
     monkeypatch.setattr(os, "remove", Mock())
-    monkeypatch.setattr(os.path, "exists", Mock())
-    os.path.exists.return_value = True
+    monkeypatch.setattr(os.path, "exists", Mock(return_value=True))
 
     consumer_name = "CONSUMER"
     provider_name = "PROVIDER"
@@ -47,10 +46,11 @@ def test_config_init(monkeypatch, file_write_mode):
     assert(my_conf.PORT_NUMBER == 8150)
     if file_write_mode == "overwrite":
         my_conf.pact_filename.assert_called_once_with()
-        os.path.exists.assert_called_once_with(file_name)
+        os.path.exists.assert_has_calls([call(pact_dir), call(file_name)])
         os.remove.assert_called_once_with(file_name)
     else:
         my_conf.pact_filename.assert_not_called()
+        os.path.exists.assert_called_once_with(pact_dir)
 
 
 def test_config_pact_filename(config_patched):
@@ -76,7 +76,7 @@ def test_pact_request_handler_write_pact(monkeypatch, config_patched, version):
     config_patched.version = version
     config_patched.semver = semver.parse(version)
     my_pact = PactRequestHandler(config_patched)
-    os.path.exists.side_effect = [True, False]
+    os.path.exists.return_value = False
     expected_pact = {
         "consumer": "CONSUMER" if version[0] == "2" else {"name": "CONSUMER"},
         "provider": "PROVIDER" if version[0] == "2" else {"name": "PROVIDER"},
