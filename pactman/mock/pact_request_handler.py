@@ -14,7 +14,12 @@ class Config:
         self.consumer_name = consumer_name
         self.provider_name = provider_name
         self.log_dir = log_dir
+
+        # ensure destination directory exists
+        if not os.path.exists(pact_dir):
+            raise ValueError(f'Pact destination directory {pact_dir} does not exist')
         self.pact_dir = pact_dir
+
         self.file_write_mode = file_write_mode
         self.version = version
         self.semver = semver.parse(version)
@@ -103,26 +108,24 @@ class PactRequestHandler:
     def write_pact(self, interaction):
         config = self.config
         filename = self.config.pact_filename()
-        consumer_name = config.consumer_name
-        provider_name = config.provider_name
         if config.semver["major"] >= 3:
-            consumer_name = {"name": consumer_name}
-            provider_name = {"name": provider_name}
-
-        # ensure destination directory exists
-        dirname = os.path.dirname(filename)
-        if not os.path.exists(dirname):
-            raise ValueError(f'Pact destination directory {dirname} does not exist')
+            consumer_name = {"name": config.consumer_name}
+            provider_name = {"name": config.provider_name}
+            provider_state_key = 'providerStates'
+        else:
+            consumer_name = config.consumer_name
+            provider_name = config.provider_name
+            provider_state_key = 'providerState'
 
         if os.path.exists(filename):
             with open(filename) as f:
                 pact = json.load(f)
             for existing in pact['interactions']:
                 if (existing['description'] == interaction['description']
-                        and existing['provider_state'] == interaction['provider_state']):
+                        and existing[provider_state_key] == interaction[provider_state_key]):
                     # already got one of these...
-                    assert existing == interaction, 'Existing "{description}" pact given "{provider_state}" ' \
-                        'exists with different request/response'.format(**existing)
+                    assert existing == interaction, 'Existing "{existing["description"]}" pact given ' \
+                        '"{existing[provider_state_key]}" exists with different request/response'.format(**locals())
                     return
             pact['interactions'].append(interaction)
         else:

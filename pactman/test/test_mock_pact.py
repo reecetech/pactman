@@ -2,6 +2,8 @@ import os
 from unittest import TestCase
 from unittest.mock import patch, call
 
+import pytest
+
 from pactman.mock.consumer import Consumer
 from pactman.mock.provider import Provider
 from pactman.mock.pact import Pact
@@ -60,7 +62,7 @@ class PactTestCase(TestCase):
         self.assertEqual(len(target._interactions), 1)
 
         self.assertEqual(
-            target._interactions[0]['provider_state'],
+            target._interactions[0]['providerState'],
             'I am creating a new pact using the Pact class')
 
         self.assertEqual(
@@ -86,8 +88,45 @@ class PactTestCase(TestCase):
              body='success', headers={'Content-Type': 'application/json'}))
 
         self.assertEqual(
-            target._interactions[0]['provider_state'],
+            target._interactions[0]['providerState'],
             'I am creating a new pact using the Pact class')
+
+        self.assertEqual(
+            target._interactions[0]['description'],
+            'a specific request to the server')
+
+        self.assertEqual(target._interactions[0]['request'], {
+            'path': '/path',
+            'method': 'GET',
+            'body': {'key': 'value'},
+            'headers': {'Accept': 'application/json'},
+            'query': {'search': 'test'}})
+        self.assertEqual(target._interactions[0]['response'], {
+            'status': 200,
+            'body': 'success',
+            'headers': {'Content-Type': 'application/json'}})
+
+    def test_definition_v3_requires_new_providerStates(self):
+        target = Pact(self.consumer, self.provider, version='3.0.0')
+        with pytest.raises(ValueError):
+            target.given('I am creating a new pact using the Pact class')
+
+    def test_definition_v3(self):
+        target = Pact(self.consumer, self.provider, version='3.0.0')
+        (target
+         .given([{'name': 'I am creating a new pact using the Pact class', 'params': {}}])
+         .upon_receiving('a specific request to the server')
+         .with_request('GET', '/path',
+                       body={'key': 'value'},
+                       headers={'Accept': 'application/json'},
+                       query={'search': 'test'})
+         .will_respond_with(
+             200,
+             body='success', headers={'Content-Type': 'application/json'}))
+
+        self.assertEqual(
+            target._interactions[0]['providerStates'],
+            [{'name': 'I am creating a new pact using the Pact class', 'params': {}}])
 
         self.assertEqual(
             target._interactions[0]['description'],
@@ -119,10 +158,10 @@ class PactTestCase(TestCase):
         self.assertEqual(len(target._interactions), 2)
 
         self.assertEqual(
-            target._interactions[1]['provider_state'],
+            target._interactions[1]['providerState'],
             'I am creating a new pact using the Pact class')
         self.assertEqual(
-            target._interactions[0]['provider_state'],
+            target._interactions[0]['providerState'],
             'I am creating another new pact using the Pact class')
 
         self.assertEqual(
@@ -165,8 +204,7 @@ class PactSetupTestCase(PactTestCase):
                 'response': {'status': 200, 'body': 'success'},
                 'request': {'path': '/path', 'method': 'GET'},
                 'description': 'a specific request to the server',
-                'provider_state': 'I am creating a new pact using the '
-                                  'Pact class'}]})
+                'providerState': 'I am creating a new pact using the Pact class'}]})
 
 
 class PactContextManagerTestCase(PactTestCase):
