@@ -164,7 +164,6 @@ class ResponseVerifier:
             log.debug(f'.. response {response.text}')
             return self.result.fail(f'{self.interaction_name} status code {response.status_code} is not '
                                     f'expected {self.status}')
-        print('ASDFASDFASDF', self.headers)
         if self.headers is not MISSING:
             for header in self.headers:
                 expected = self.headers[header]

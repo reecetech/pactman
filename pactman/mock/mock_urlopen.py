@@ -104,7 +104,6 @@ class MockURLOpenHandler(PactRequestHandler):
                 headers['Content-Type'] = 'application/json; charset=utf-8'
         else:
             body = io.BytesIO(b'')
-        print(interaction['response'])
         return HTTPResponse(body=body,
                             status=interaction['response']['status'],
                             preload_content=False,

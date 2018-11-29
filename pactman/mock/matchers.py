@@ -199,6 +199,8 @@ def from_term(term):
         raise ValueError('Unknown type: %s' % type(term))
 
 
+# For backwards compatiblity with test code that uses pact-python to declare pacts,
+# allow the various classes from that package to also be used to define rules
 try:
     import pact as pact_python
     LIKE_CLASSES = (Like, pact_python.Like)
