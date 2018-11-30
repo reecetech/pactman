@@ -70,7 +70,20 @@ class Request:
         body_rules = get_matching_rules_v3(self.body, '$')
         if body_rules:
             matchingRules['body'] = body_rules
-        query_rules = get_matching_rules_v3(self.query, '$.query')
+        query_rules = get_matching_rules_v3(self.query, 'query')
         if query_rules:
-            matchingRules['query'] = query_rules['$.query']
+            expand_query_rules(query_rules)
+            matchingRules['query'] = query_rules
         return matchingRules
+
+
+def expand_query_rules(rules):
+    # Query rules in the pact JSON are declared without the array notation (even though they always
+    # match arrays).
+    # The matchers will be coded to JSON paths by get_matching_rules_v3, and we need to extract
+    # them out to a dictionary where the original rule path will look like 'query.param[*]'
+    # and we need to extract "param".
+    for rule_path in list(rules):
+        matchers = rules.pop(rule_path)
+        rule_param = rule_path[6:-3]
+        rules[rule_param] = matchers

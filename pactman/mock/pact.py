@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import os
 
+import semver
 from pactman.mock.request import Request
 from pactman.mock.response import Response
 from .mock_server import getMockServer
@@ -95,6 +96,7 @@ class Pact(object):
         self.sslcert = sslcert
         self.sslkey = sslkey
         self.version = version
+        self.semver = semver.parse(self.version)
         self.use_mocking_server = use_mocking_server
         self._interactions = []
         self._mock_handler = None
@@ -110,12 +112,37 @@ class Pact(object):
         When the provider verifies this contract, they will use this field to
         setup pre-defined data that will satisfy the response expectations.
 
-        :param provider_state: The short sentence that is unique to describe
-            the provider state for this contract.
+        In pact v2 the provider state is a short sentence that is unique to describe
+        the provider state for this contract. For example:
+
+            "an alligator with the given name Mary exists and the user Fred is logged in"
+
+        In pact v3 the provider state is a list of state specifications with a name and
+        associated params to define specific values for the state. For example:
+
+            [
+                {
+                    "name": "an alligator with the given name exists",
+                    "params": {"name" : "Mary"}
+                }, {
+                    "name": "the user is logged in",
+                    "params" : { "username" : "Fred"}
+                }
+            ]
+
+        :param provider_state: The state as described above.
         :type provider_state: basestring
         :rtype: Pact
         """
-        self._interactions.insert(0, {'provider_state': provider_state})
+        if self.semver["major"] < 3:
+            provider_state_key = 'providerState'
+            if not isinstance(provider_state, str):
+                raise ValueError('pact v2 provider states must be strings')
+        else:
+            provider_state_key = 'providerStates'
+            if not isinstance(provider_state, list):
+                raise ValueError('pact v3+ provider states must be lists of {name: "", params: {}} specs')
+        self._interactions.insert(0, {provider_state_key: provider_state})
         return self
 
     def setup(self):

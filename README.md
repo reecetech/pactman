@@ -316,6 +316,13 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.3.0
+
+- Fix some issues around mocking request queries and the mock's verification of same
+- Fix header regex matching in mock verification
+- Actually use the version passed in to `has_pact_with()`
+- Fix some pact v3 generation issues (thanks pan Jacek)
+
 2.2.0
 
 - Reinstate lost result output.

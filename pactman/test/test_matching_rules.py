@@ -10,13 +10,13 @@ from pactman.verifier.matching_rule import (
     split_path,
     weight_path,
     MatchType, MatchNull, MatchInclude, MatchEquality, MatchNumber, MatchDecimal, MatchInteger, MatchRegex,
-    InvalidMatcher, log)
+    InvalidMatcher, log, rule_matchers_v3, rule_matchers_v2)
 
 
 def test_stringify():
     r = MatchType('$', {'match': 'type'})
     assert str(r) == "Rule match by {'match': 'type'} at $"
-    assert repr(r) == "<MatchType $ {'match': 'type'}>"
+    assert repr(r) == "<MatchType path='$' rule={'match': 'type'}>"
 
 
 def test_invalid_match_type(monkeypatch):
@@ -25,17 +25,18 @@ def test_invalid_match_type(monkeypatch):
     log.warning.assert_called_once()
 
 
-@pytest.mark.parametrize('path, weight', [
-    ('$.body', 0),
-    ('$.body.item1.level[0].id', 0),
-    ('$.body.item1.level[1].id', 64),
-    ('$.body.item1.level[*].id', 32),
-    ('$.body.*.level[*].id', 16),
+@pytest.mark.parametrize('path, weight, spam_weight', [
+    ('$.body', 4, 4),
+    ('$.body.item1.level[0].id', 0, 0),
+    ('$.body.item1.level[1].id', 64, 0),
+    ('$.body.item1.level[*].id', 32, 0),
+    ('$.body.*.level[*].id', 16, 0),
+    ('$.body.*.*[*].id', 8, 8),
 ])
-def test_weightings(path, weight):
+def test_weightings(path, weight, spam_weight):
     rule = Matcher(path, {'match': 'type'})
-    assert rule.weight(['body', 'item1', 'level', 1, 'id']) == weight
-    assert rule.weight(['body', 'item2', 'spam', 1, 'id']) == 0
+    assert rule.weight(['$', 'body', 'item1', 'level', 1, 'id']) == weight
+    assert rule.weight(['$', 'body', 'item2', 'spam', 1, 'id']) == spam_weight
 
 
 @pytest.mark.parametrize('path, result', [
@@ -57,16 +58,16 @@ def test_split_path(path, result):
     assert list(split_path(path)) == result
 
 
-@pytest.mark.parametrize('path, other, result', [
+@pytest.mark.parametrize('spec, test, result', [
     (['a'], ['b'], 0),
     (['*'], ['a'], 1),
     (['a', '*'], ['a', 'b'], 2),
     (['a', 'b'], ['a', 'b'], 4),
     (['a', 'b', 'c'], ['a', 'b'], 0),
-    (['a', 'b'], ['a', 'b', 'c'], 0),
+    (['a', 'b'], ['a', 'b', 'c'], 4),
 ])
-def test_weight_path(path, other, result):
-    assert weight_path(path, other) == result
+def test_weight_path(spec, test, result):
+    assert weight_path(spec, test) == result
 
 
 @pytest.mark.parametrize('data, spec', [
@@ -176,3 +177,25 @@ def test_max_ignored():
 ])
 def test_fold_type(source, result):
     assert fold_type(source) == result
+
+
+def test_build_matching_rules_handles_rule_with_unknown_type_v2(monkeypatch):
+    monkeypatch.setattr(log, 'warning', Mock())
+    rules = rule_matchers_v2({
+        "$.body": {"match": "SPAM"},
+        "$.body[*].*": {"match": "type"}
+    })
+    assert 2 == len(rules['body'])
+    log.warning.assert_called_once()
+
+
+def test_build_matching_rules_handles_rule_with_unknown_type_v3(monkeypatch):
+    monkeypatch.setattr(log, 'warning', Mock())
+    rules = rule_matchers_v3({
+        "body": {
+            "$": {"matchers": [{"match": "SPAM"}]},
+            "$[*].*": {"matchers": [{"match": "type"}]}
+        }
+    })
+    assert 2 == len(rules['body'])
+    log.warning.assert_called_once()
