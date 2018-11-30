@@ -316,6 +316,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.4.0
+
+- Create the pact destination dir if it's missing and its parent exists 
+
 2.3.0
 
 - Fix some issues around mocking request queries and the mock's verification of same

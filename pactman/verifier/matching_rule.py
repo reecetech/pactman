@@ -295,7 +295,7 @@ def rule_matchers_v2(rules):
                 "match": "type"
             },
             "$.path": {
-                "regex": "/user/\w+/"
+                "regex": "/user/\\w+/"
             }
         }
 

@@ -9,6 +9,14 @@ from ..verifier.verify import RequestVerifier
 from ..verifier.result import Result
 
 
+def ensure_pact_dir(pact_dir):
+    if not os.path.exists(pact_dir):
+        parent_dir = os.path.dirname(pact_dir)
+        if not os.path.exists(parent_dir):
+            raise ValueError(f'Pact destination directory {pact_dir} does not exist')
+        os.mkdir(pact_dir)
+
+
 class Config:
     def __init__(self, consumer_name, provider_name, log_dir, pact_dir, file_write_mode, version):
         self.consumer_name = consumer_name
@@ -16,8 +24,7 @@ class Config:
         self.log_dir = log_dir
 
         # ensure destination directory exists
-        if not os.path.exists(pact_dir):
-            raise ValueError(f'Pact destination directory {pact_dir} does not exist')
+        ensure_pact_dir(pact_dir)
         self.pact_dir = pact_dir
 
         self.file_write_mode = file_write_mode
