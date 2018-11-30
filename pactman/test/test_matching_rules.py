@@ -81,12 +81,12 @@ def test_numbers(data, spec):
 
 
 def test_regex():
-    MatchRegex('$', dict(match='regex', regex='\w+')).apply('spam', None, ['a'])
+    MatchRegex('$', dict(match='regex', regex=r'\w+')).apply('spam', None, ['a'])
 
 
 def test_regex_fail():
     with pytest.raises(RuleFailed):
-        MatchRegex('$', dict(match='regex', regex='\W+')).apply('spam', None, ['a'])
+        MatchRegex('$', dict(match='regex', regex=r'\W+')).apply('spam', None, ['a'])
 
 
 def test_integer():

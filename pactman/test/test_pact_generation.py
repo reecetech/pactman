@@ -1,7 +1,8 @@
 import pytest
 import semver
-from unittest.mock import Mock, mock_open, patch, call
+from unittest.mock import Mock, mock_open, patch
 import os
+from pactman.mock import pact_request_handler
 from pactman.mock.pact_request_handler import Config, MockPact, PactRequestHandler
 
 
@@ -28,6 +29,7 @@ def test_config_init(monkeypatch, file_write_mode):
     Config.pact_filename.return_value = file_name
     monkeypatch.setattr(os, "remove", Mock())
     monkeypatch.setattr(os.path, "exists", Mock(return_value=True))
+    monkeypatch.setattr(pact_request_handler, "ensure_pact_dir", Mock())
 
     consumer_name = "CONSUMER"
     provider_name = "PROVIDER"
@@ -44,18 +46,32 @@ def test_config_init(monkeypatch, file_write_mode):
     assert(my_conf.semver == semver.parse(version))
     my_conf.allocate_port.assert_called_once_with()
     assert(my_conf.PORT_NUMBER == 8150)
+    pact_request_handler.ensure_pact_dir.assert_called_once_with(pact_dir)
     if file_write_mode == "overwrite":
         my_conf.pact_filename.assert_called_once_with()
-        os.path.exists.assert_has_calls([call(pact_dir), call(file_name)])
+        os.path.exists.assert_called_once_with(file_name)
         os.remove.assert_called_once_with(file_name)
     else:
         my_conf.pact_filename.assert_not_called()
-        os.path.exists.assert_called_once_with(pact_dir)
 
 
 def test_config_pact_filename(config_patched):
     res = config_patched.pact_filename()
     assert(res == os.path.join(config_patched.pact_dir, "CONSUMER-PROVIDER-pact.json"))
+
+
+def test_ensure_pact_dir_when_exists(monkeypatch):
+    monkeypatch.setattr(os.path, 'exists', Mock(side_effect=[True]))
+    monkeypatch.setattr(os, 'mkdir', Mock())
+    pact_request_handler.ensure_pact_dir('/tmp/pacts')
+    os.mkdir.assert_not_called()
+
+
+def test_ensure_pact_dir_when_parent_exists(monkeypatch):
+    monkeypatch.setattr(os.path, 'exists', Mock(side_effect=[False, True]))
+    monkeypatch.setattr(os, 'mkdir', Mock())
+    pact_request_handler.ensure_pact_dir('/tmp/pacts')
+    os.mkdir.assert_called_once_with('/tmp/pacts')
 
 
 def test_mock_init(config_patched):
