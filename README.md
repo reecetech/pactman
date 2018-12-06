@@ -316,6 +316,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.5.0
+
+- Fix some bugs around empty array verification
+
 2.4.0
 
 - Create the pact destination dir if it's missing and its parent exists 

@@ -459,6 +459,22 @@ def test_version_3_response_testcases(filename, mock_pact, mock_result):
 
 @pytest.mark.parametrize(
     'filename, verifier, result',
+    # chain(
+    #     ((t, RequestVerifier, FakeRequest) for t in all_testcases(BASE_DIR / 'testcases-version-2' / 'request')),
+    ((t, ResponseVerifier, FakeResponse) for t in all_testcases(BASE_DIR / 'testcases-version-2' / 'response'))
+    # )
+)
+def test_local_version_2_testcases(filename, verifier, result, mock_pact, mock_result):
+    with open(filename) as file:
+        case = json.load(file)
+        rv = verifier(mock_pact('2.0.0'), case['expected'], mock_result)
+        rv.verify(result(case['actual']))
+        success = not bool(rv.result.fail.call_count)
+        assert case['match'] == success
+
+
+@pytest.mark.parametrize(
+    'filename, verifier, result',
     chain(
         ((t, RequestVerifier, FakeRequest) for t in all_testcases(BASE_DIR / 'testcases-version-3' / 'request')),
         ((t, ResponseVerifier, FakeResponse) for t in all_testcases(BASE_DIR / 'testcases-version-3' / 'response'))

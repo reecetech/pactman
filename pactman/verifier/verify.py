@@ -297,6 +297,17 @@ class ResponseVerifier:
         log.debug(f'apply_rules_array {data!r} {spec!r} {path!r}')
         if fold_type(data) is not list:
             return self.result.fail(f'{self.interaction_name} element is not an array (is {nice_type(data)})', path)
+
+        if not data and not spec:
+            # both arrays are empty, there's no further rules to apply
+            return True
+
+        if not spec and data:
+            return self.result.fail(f'{self.interaction_name} spec requires empty array but data has contents', path)
+
+        if spec and not data:
+            return self.result.fail(f'{self.interaction_name} spec requires data in array but data is empty', path)
+
         # Attempt to find a matchingRule for this path elements in the array - if we find one then we use the first
         # spec value (since they must all satisfy the matchingRule and there may only be one) otherwise
         # we are comparing value to value so pass through the actual value from the spec.

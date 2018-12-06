@@ -1,0 +1,25 @@
+{
+  "match": false,
+  "comment": "empty spec array does not match non-empty data array",
+  "expected": {
+    "headers": {"Content-Type": "application/json"},
+    "body": {
+      "id": 1014753708,
+      "addresses": []
+    },
+    "matchingRules": {
+      "$.body": {
+        "match": "type"
+      }
+    }
+  },
+  "actual": {
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "id": 1014753708,
+      "addresses": ["foo@bar.com"]
+    }
+  }
+}
