@@ -116,12 +116,8 @@ class PactRequestHandler:
         config = self.config
         filename = self.config.pact_filename()
         if config.semver["major"] >= 3:
-            consumer_name = {"name": config.consumer_name}
-            provider_name = {"name": config.provider_name}
             provider_state_key = 'providerStates'
         else:
-            consumer_name = config.consumer_name
-            provider_name = config.provider_name
             provider_state_key = 'providerState'
 
         if os.path.exists(filename):
@@ -137,8 +133,8 @@ class PactRequestHandler:
             pact['interactions'].append(interaction)
         else:
             pact = dict(
-                consumer=consumer_name,
-                provider=provider_name,
+                consumer={"name": config.consumer_name},
+                provider={"name": config.provider_name},
                 interactions=[interaction],
                 metadata=dict(pactSpecification=dict(version=self.config.version)),
             )
