@@ -35,11 +35,12 @@ def test_invalid_match_type(monkeypatch):
 ])
 def test_weightings(path, weight, spam_weight):
     rule = Matcher(path, {'match': 'type'})
-    assert rule.weight(['$', 'body', 'item1', 'level', 1, 'id']) == weight
-    assert rule.weight(['$', 'body', 'item2', 'spam', 1, 'id']) == spam_weight
+    assert rule.weight(['$', 'body', 'item1', 'level', 1, 'id']).weight == weight
+    assert rule.weight(['$', 'body', 'item2', 'spam', 1, 'id']).weight == spam_weight
 
 
 @pytest.mark.parametrize('path, result', [
+    ('', []),
     ('$', ['$']),
     ('$.body', ['$', 'body']),
     ('$.body.item1', ['$', 'body', 'item1']),

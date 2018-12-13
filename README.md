@@ -316,6 +316,12 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.6.0
+
+- Fix several issues cause by a failure to detect failure in several test cases
+  (header, path and array element rules may not have been applied)
+- Fix rules applying to a single non-first element in an array
+
 2.5.0
 
 - Fix some bugs around empty array verification

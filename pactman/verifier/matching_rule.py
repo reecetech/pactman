@@ -34,8 +34,12 @@ def split_path(path):
     * Path elements represent keys.
     * A star (*) can be used to match all keys of a map or all items of an array (one level only).
 
+    The empty path (see "path" matching rules) should result in an empty split path.
+
     Returns an iterator that has each path element as an item with array indexes converted to integers.
     """
+    if not path:
+        return
     for elem in re.split(r'[\.\[]', path):
         if elem == '*]':
             yield '*'
@@ -90,6 +94,18 @@ def fold_type(obj):
     return type(obj)
 
 
+class WeightedRule:
+    def __init__(self, rule, weight):
+        self.rule = rule
+        self.weight = weight
+
+    def __lt__(self, other):
+        return self.weight < other.weight
+
+    def __str__(self):
+        return f'rule="{self.rule}", weight={self.weight}'
+
+
 class Matcher:
     """Hold a JSONpath spec and a matchingRule rule and know how to test it.
 
@@ -130,7 +146,7 @@ class Matcher:
 
         Return the weight, or 0 if there is no match.
         """
-        return weight_path(list(split_path(self.path)), element_path)
+        return WeightedRule(self, weight_path(list(split_path(self.path)), element_path))
 
     def check_min(self, data, path):
         if 'min' not in self.rule:
@@ -303,13 +319,8 @@ def rule_matchers_v2(rules):
     """
     matchers = defaultdict(list)
     for path, spec in rules.items():
-        if path == '$.path':
-            # "path" rules are a bit different - there's no jsonpath as there's only a single value to compare, so we
-            # hard-code the path to '$' which always matches when looking for weighted path matches
-            matchers['path'].append(Matcher.get_matcher('$', spec))
-        else:
-            section = list(split_path(path))[1]
-            matchers[section].append(Matcher.get_matcher(path, spec))
+        section = list(split_path(path))[1]
+        matchers[section].append(Matcher.get_matcher(path, spec))
     return matchers
 
 
@@ -350,8 +361,8 @@ def rule_matchers_v3(rules):
     matchers = {}
     if 'path' in rules:
         # "path" rules are a bit different - there's no jsonpath as there's only a single value to compare, so we
-        # hard-code the path to '$' which always matches when looking for weighted path matches
-        matchers['path'] = [MultipleMatchers('$', **rules['path'])]
+        # hard-code the path to '' which always matches when looking for weighted path matches
+        matchers['path'] = [MultipleMatchers('', **rules['path'])]
     if 'query' in rules:
         # "query" rules are a bit different too - matchingRules are a flat single-level dictionary of keys which map to
         # array elements, but the data they match is keys mapping to an array, so alter the path such that the rule

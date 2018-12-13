@@ -16,12 +16,12 @@ from pactman.verifier.verify import Interaction, RequestVerifier, ResponseVerifi
 BASE_DIR = pathlib.Path(__file__).absolute().parents[0]
 
 
-def all_testcases(path):
+def all_testcases(path, version):
     for entry in path.iterdir():
         if entry.is_file() and entry.suffix == '.json':
-            yield str(entry)
+            yield str(entry), version
         elif entry.is_dir():
-            yield from all_testcases(entry)
+            yield from all_testcases(entry, version)
 
 
 @pytest.fixture
@@ -363,84 +363,25 @@ class FakeRequest:
 
 
 @pytest.mark.parametrize(
-    'filename',
-    all_testcases(BASE_DIR / 'pact-spec-version-1.1' / 'testcases' / 'response')
+    'filename, version, verifier, response',
+    chain(
+        ((f, v, ResponseVerifier, FakeResponse) for f, v in chain(
+            all_testcases(BASE_DIR / 'pact-spec-version-1.1' / 'testcases' / 'response', '1.1.0'),
+            all_testcases(BASE_DIR / 'pact-spec-version-2' / 'testcases' / 'response', '2.0.0'),
+            all_testcases(BASE_DIR / 'pact-spec-version-3' / 'testcases' / 'response', '3.0.0'),
+            all_testcases(BASE_DIR / 'testcases-version-2' / 'response', '2.0.0'),
+            all_testcases(BASE_DIR / 'testcases-version-3' / 'response', '3.0.0'),
+        )),
+        ((f, v, RequestVerifier, FakeRequest) for f, v in chain(
+            all_testcases(BASE_DIR / 'pact-spec-version-1.1' / 'testcases' / 'request', '1.1.0'),
+            all_testcases(BASE_DIR / 'pact-spec-version-2' / 'testcases' / 'request', '2.0.0'),
+            all_testcases(BASE_DIR / 'pact-spec-version-3' / 'testcases' / 'request', '3.0.0'),
+            # all_testcases(BASE_DIR / 'testcases-version-2' / 'request', '2.0.0'),
+            all_testcases(BASE_DIR / 'testcases-version-3' / 'request', '3.0.0'),
+        ))
+    )
 )
-def test_version_1_1_response_testcases(filename, mock_pact, mock_result):
-    with open(filename) as file:
-        case = json.load(file)
-        rv = ResponseVerifier(mock_pact('1.1.0'), case['expected'], mock_result)
-        rv.verify(FakeResponse(case['actual']))
-        success = not bool(rv.result.fail.call_count)
-        assert case['match'] == success
-
-
-@pytest.mark.parametrize(
-    'filename',
-    all_testcases(BASE_DIR / 'pact-spec-version-1.1' / 'testcases' / 'request')
-)
-def test_version_1_1_request_testcases(filename, mock_pact, mock_result):
-    with open(filename) as file:
-        case = json.load(file)
-        rv = RequestVerifier(mock_pact('1.1.0'), case['expected'], mock_result)
-        rv.verify(FakeRequest(case['actual']))
-        success = not bool(rv.result.fail.call_count)
-        assert case['match'] == success
-
-
-@pytest.mark.parametrize(
-    'filename',
-    all_testcases(BASE_DIR / 'pact-spec-version-2' / 'testcases' / 'response')
-)
-def test_version_2_response_testcases(filename, mock_pact, mock_result):
-    if filename.endswith(' xml.json'):
-        # some of the files don't declare the damned content-type!
-        raise pytest.skip('XML content type not supported')
-    with open(filename) as file:
-        case = json.load(file)
-        if case['expected'].get('headers', {}).get('Content-Type', "") == 'application/xml':
-            raise pytest.skip('XML content type not supported')
-        rv = ResponseVerifier(mock_pact('2.0.0'), case['expected'], mock_result)
-        rv.verify(FakeResponse(case['actual']))
-        success = not bool(rv.result.fail.call_count)
-        assert case['match'] == success
-
-
-@pytest.mark.parametrize(
-    'filename',
-    all_testcases(BASE_DIR / 'pact-spec-version-2' / 'testcases' / 'request')
-)
-def test_version_2_request_testcases(filename, mock_pact, mock_result):
-    with open(filename) as file:
-        case = json.load(file)
-        if case['expected'].get('headers', {}).get('Content-Type', "") == 'application/xml':
-            raise pytest.skip('XML content type not supported')
-        rv = RequestVerifier(mock_pact('2.0.0'), case['expected'], mock_result)
-        rv.verify(FakeRequest(case['actual']))
-        success = not bool(rv.result.fail.call_count)
-        assert case['match'] == success
-
-
-@pytest.mark.parametrize(
-    'filename',
-    all_testcases(BASE_DIR / 'pact-spec-version-3' / 'testcases' / 'request')
-)
-def test_version_3_request_testcases(filename, mock_pact, mock_result):
-    with open(filename) as file:
-        case = json.load(file)
-        if case['expected'].get('headers', {}).get('Content-Type', "") == 'application/xml':
-            raise pytest.skip('XML content type not supported')
-        rv = RequestVerifier(mock_pact('3.0.0'), case['expected'], mock_result)
-        rv.verify(FakeRequest(case['actual']))
-        success = not bool(rv.result.fail.call_count)
-        assert case['match'] == success
-
-
-@pytest.mark.parametrize(
-    'filename',
-    all_testcases(BASE_DIR / 'pact-spec-version-3' / 'testcases' / 'response')
-)
-def test_version_3_response_testcases(filename, mock_pact, mock_result):
+def test_testcases(filename, version, verifier, response, mock_pact, mock_result):
     if filename.endswith(' xml.json'):
         # some of the files don't declare the damned content-type!
         raise pytest.skip('XML content type not supported')
@@ -451,39 +392,8 @@ def test_version_3_response_testcases(filename, mock_pact, mock_result):
             raise pytest.skip('JSON test case mal-formed')
         if case['expected'].get('headers', {}).get('Content-Type', "") == 'application/xml':
             raise pytest.skip('XML content type not supported')
-        rv = ResponseVerifier(mock_pact('3.0.0'), case['expected'], mock_result)
-        rv.verify(FakeResponse(case['actual']))
+        rv = verifier(mock_pact(version), case['expected'], mock_result)
+        result = rv.verify(response(case['actual']))
         success = not bool(rv.result.fail.call_count)
-        assert case['match'] == success
-
-
-@pytest.mark.parametrize(
-    'filename, verifier, result',
-    # chain(
-    #     ((t, RequestVerifier, FakeRequest) for t in all_testcases(BASE_DIR / 'testcases-version-2' / 'request')),
-    ((t, ResponseVerifier, FakeResponse) for t in all_testcases(BASE_DIR / 'testcases-version-2' / 'response'))
-    # )
-)
-def test_local_version_2_testcases(filename, verifier, result, mock_pact, mock_result):
-    with open(filename) as file:
-        case = json.load(file)
-        rv = verifier(mock_pact('2.0.0'), case['expected'], mock_result)
-        rv.verify(result(case['actual']))
-        success = not bool(rv.result.fail.call_count)
-        assert case['match'] == success
-
-
-@pytest.mark.parametrize(
-    'filename, verifier, result',
-    chain(
-        ((t, RequestVerifier, FakeRequest) for t in all_testcases(BASE_DIR / 'testcases-version-3' / 'request')),
-        ((t, ResponseVerifier, FakeResponse) for t in all_testcases(BASE_DIR / 'testcases-version-3' / 'response'))
-    )
-)
-def test_local_version_3_testcases(filename, verifier, result, mock_pact, mock_result):
-    with open(filename) as file:
-        case = json.load(file)
-        rv = verifier(mock_pact('3.0.0'), case['expected'], mock_result)
-        rv.verify(result(case['actual']))
-        success = not bool(rv.result.fail.call_count)
+        assert result == success, 'fail() was not called for failure here'
         assert case['match'] == success

@@ -174,7 +174,12 @@ class ResponseVerifier:
                     if header.lower() != actual.lower():
                         continue
                     actual = response.headers[actual]
-                    if not self.check_rules(actual, expected, ['header', header]):
+                    # In <v3 the header rules were under $.headers... but in v3 they're {'header': ...} ugh
+                    if self.pact.semver['major'] > 2:
+                        rule_section = 'header'
+                    else:
+                        rule_section = 'headers'
+                    if not self.check_rules(actual, expected, [rule_section, header]):
                         log.info(f'{self.interaction_name} headers: {response.json()}')
                         return False
         if self.body is not MISSING:
@@ -190,7 +195,7 @@ class ResponseVerifier:
             r = self.apply_rules(data, spec, path)
         else:
             # otherwise the actual must equal the expected (excepting dict elements in actual that are unexpected)
-            if path[0] == 'header':
+            if path[0] in ('header', 'headers'):
                 r = self.compare_header(data, spec, path)
             else:
                 r = self.compare(data, spec, ['body'])
@@ -200,14 +205,28 @@ class ResponseVerifier:
     def compare_header(self, data, spec, path):
         parsed_data = sorted(parse_header(data))
         parsed_spec = sorted(parse_header(spec))
+        print(parsed_data, parsed_spec)
         log.debug(f'compare_header {parsed_data} {parsed_spec}')
-        if parsed_data != parsed_spec:
-            # there's a mind-bogglingly specific caveat to header matching that says that if the headers don't
-            # match and they're a Content-Type and an encoding is supplier but not expected then it's OK to pass
-            data_has_charset = [part for part in parsed_data if part.has_param('charset')]
-            spec_has_charset = [part for part in parsed_spec if part.has_param('charset')]
-            if path[1].lower() == 'content-type' and data_has_charset and not spec_has_charset:
-                return True
+        if parsed_data == parsed_spec:
+            return True
+
+        if path[1].lower() != 'content-type':
+            return self.result.fail(f'{self.interaction_name} header {path[1]} value {data!r} does not match '
+                                    f'expected {spec!r}')
+        # there's a specific caveat to header matching that says that if the headers don't match and they're a
+        # Content-Type and an encoding present in one and not the other, then that's OK
+
+        # first, confirm the non-charset parts match
+        data_without_charset = [part for part in parsed_data if not part.has_param('charset')]
+        spec_without_charset = [part for part in parsed_spec if not part.has_param('charset')]
+        if data_without_charset != spec_without_charset:
+            return self.result.fail(f'{self.interaction_name} header {path[1]} value {data!r} does not match '
+                                    f'expected {spec!r} (ignoring charset)')
+
+        # now see whether the presence of the charset differs
+        data_has_charset = any(part for part in parsed_data if part.has_param('charset'))
+        spec_has_charset = any(part for part in parsed_spec if part.has_param('charset'))
+        if data_has_charset == spec_has_charset:
             return self.result.fail(f'{self.interaction_name} header {path[1]} value {data!r} does not match '
                                     f'expected {spec!r}')
         return True
@@ -250,11 +269,11 @@ class ResponseVerifier:
     def apply_rules(self, data, spec, path):
         # given some actual data and a pact spec at a certain path, check any rules for that path
         log.debug(f'apply_rules data={data!r} spec={spec!r} path={format_path(path)}')
-        rule = self.find_rule(path)
-        log.debug(f'... rule lookup got {rule}')
-        if rule:
+        weighted_rule = self.find_rule(path)
+        log.debug(f'... rule lookup got {weighted_rule}')
+        if weighted_rule:
             try:
-                rule.apply(data, spec, path)
+                weighted_rule.rule.apply(data, spec, path)
             except RuleFailed as e:
                 log.debug(f'... failed: {e}')
                 return self.result.fail(str(e), path)
@@ -269,13 +288,18 @@ class ResponseVerifier:
             r = self.apply_rules_dict(data, spec, path)
             log.debug(f'apply_rules {format_path(path)} DONE = {r!r}')
             return r
-        elif not rule:
-            # in the absence of a rule, and we're at a leaf, we fall back on equality
-            log.debug('... falling back on equality matching')
-            return data == spec
+        elif not weighted_rule:
+            if path[0] in ('header', 'headers'):
+                log.debug('... falling back on header matching')
+                return self.compare_header(data, spec, path)
+            else:
+                # in the absence of a rule, and we're at a leaf, we fall back on equality
+                log.debug('... falling back on equality matching')
+                return data == spec
         return True
 
     def find_rule(self, path):
+        # rules are trickier to find because the mapping of content to matchingRules isn't 1:1 so...
         section = path[0]
         section_rules = self.matching_rules.get(section)
         if not section_rules:
@@ -284,14 +308,18 @@ class ResponseVerifier:
         if self.pact.semver['major'] > 2:
             # version 3 rules paths don't include the interaction section ("body", "headers", ...)
             path = path[1:]
-        if section == 'body':
-            # but body paths always have a '$' at the start, yes
+            if section == 'body':
+                # but body paths always have a '$' at the start, yes
+                path = ['$'] + path
+        else:
+            # version 2 paths always have a '$' at the start
             path = ['$'] + path
-        weights = sorted((rule.weight(path), i, rule) for i, rule in enumerate(section_rules))
-        log.debug(f'... path {path} got weights {weights}')
-        weight, i, rule = weights[-1]
-        if weight:
-            return rule
+        weighted_rules = sorted(rule.weight(path) for rule in section_rules)
+        display = [(weighted_rule.weight, weighted_rule.rule.path) for weighted_rule in weighted_rules]
+        log.debug(f'... path {path} got weights {display}')
+        weighted_rule = weighted_rules[-1]
+        if weighted_rule.weight:
+            return weighted_rule
 
     def apply_rules_array(self, data, spec, path):
         log.debug(f'apply_rules_array {data!r} {spec!r} {path!r}')
@@ -308,28 +336,32 @@ class ResponseVerifier:
         if spec and not data:
             return self.result.fail(f'{self.interaction_name} spec requires data in array but data is empty', path)
 
-        # Attempt to find a matchingRule for this path elements in the array - if we find one then we use the first
-        # spec value (since they must all satisfy the matchingRule and there may only be one) otherwise
-        # we are comparing value to value so pass through the actual value from the spec.
-        log.debug('looking for a rule')
-        rule = self.find_rule(path + [0])
-        if rule is not None:
-            log.debug(f'... got a rule {rule}, applying to first elements')
-            try:
-                rule.apply(data[0], spec[0], path)
-            except RuleFailed as e:
-                log.debug(f'... failed: {e}')
-                return self.result.fail(str(e), path)
-        log.debug(f'... performing elementwise rule application')
-        for i, data_elem in enumerate(data):
-            # always apply matching rules using the first element of the spec array
-            spec_elem = spec[0]
-            p = path + [i]
-            if not self.apply_rules(data_elem, spec_elem, p):
-                log.debug(f'apply_rules_array {path!r} failing on item {i}')
+        # Attempt to find a matchingRule for the elements in the array
+        log.debug('iterating elements, looking for rules')
+        for index, data_elem in enumerate(data):
+            if not self.apply_rules_array_element(data_elem, spec, path + [index], index):
+                log.debug(f'apply_rules_array {path!r} failing on item {index}')
                 return False
         log.debug(f'apply_rules_array {path!r} DONE = True')
         return True
+
+    def apply_rules_array_element(self, data, spec, path, index):
+        # we're iterating an array - attempt to find a rule for the specific data element and if
+        # the index of the rule is "*" then just use the first element in the spec, otherwise use
+        # the *matching* element of the spec.
+        log.debug(f'apply_rules_array_element data={data!r} spec={spec!r} path={format_path(path)}')
+        weighted_rule = self.find_rule(path)
+        log.debug(f'... element rule lookup got {weighted_rule}')
+        if len(spec) == 1 and index:
+            # if the spec is a single element but data is longer there's a *good chance* that it's a sample
+            # for matching rules to be applied to
+            spec = spec[0]
+        else:
+            # element to element comparisons
+            spec = spec[index]
+
+        # now do normal rule application
+        return self.apply_rules(data, spec, path)
 
     def apply_rules_dict(self, data, spec, path):
         log.debug(f'apply_rules_dict {data!r} {spec!r} {path!r}')

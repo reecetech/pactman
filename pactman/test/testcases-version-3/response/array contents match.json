@@ -1,0 +1,20 @@
+{
+  "match": true,
+  "comment": "match third array element by type",
+  "expected": {
+    "headers": {"Content-Type": "application/json"},
+    "body": ["a", "b", "c"],
+    "matchingRules": {
+      "body": {
+        "$[2]": {"matchers": [{"match": "type"}]}
+      }
+    }
+
+  },
+  "actual": {
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": ["a", "b", "c"]
+  }
+}
