@@ -113,9 +113,8 @@ class PactRequestHandler:
         raise NotImplementedError()
 
     def write_pact(self, interaction):
-        config = self.config
         filename = self.config.pact_filename()
-        if config.semver["major"] >= 3:
+        if self.config.semver["major"] >= 3:
             provider_state_key = 'providerStates'
         else:
             provider_state_key = 'providerState'
@@ -132,12 +131,16 @@ class PactRequestHandler:
                     return
             pact['interactions'].append(interaction)
         else:
-            pact = dict(
-                consumer={"name": config.consumer_name},
-                provider={"name": config.provider_name},
-                interactions=[interaction],
-                metadata=dict(pactSpecification=dict(version=self.config.version)),
-            )
+            pact = construct_pact(self.config, interaction)
 
         with open(filename, 'w') as f:
             json.dump(pact, f, indent=2)
+
+
+def construct_pact(config, interaction):
+    return dict(
+        consumer={"name": config.consumer_name},
+        provider={"name": config.provider_name},
+        interactions=[interaction],
+        metadata=dict(pactSpecification=dict(version=config.version)),
+    )

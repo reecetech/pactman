@@ -72,7 +72,9 @@ class Request:
             matchingRules['body'] = body_rules
         query_rules = get_matching_rules_v3(self.query, 'query')
         if query_rules:
+            print('generate_v3_matchingRules', query_rules)
             expand_query_rules(query_rules)
+            print('wat', query_rules)
             matchingRules['query'] = query_rules
         return matchingRules
 
@@ -81,9 +83,15 @@ def expand_query_rules(rules):
     # Query rules in the pact JSON are declared without the array notation (even though they always
     # match arrays).
     # The matchers will be coded to JSON paths by get_matching_rules_v3, and we need to extract
-    # them out to a dictionary where the original rule path will look like 'query.param[*]'
+    # them out to a dictionary where the original rule path will look like 'query.param'
     # and we need to extract "param".
+    # If there's no param (it's just "query") then make it a wildcard
     for rule_path in list(rules):
         matchers = rules.pop(rule_path)
-        rule_param = rule_path[6:-3]
+        rule_param = rule_path[6:]
+        # trim off any array wildcard, it's implied here
+        if rule_param.endswith('[*]'):
+            rule_param = rule_param[:-3]
+        if not rule_param:
+            rule_param = '*'
         rules[rule_param] = matchers

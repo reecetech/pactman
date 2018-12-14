@@ -1,0 +1,34 @@
+{
+  "match": false,
+  "comment": "Queries match with regex wildcard",
+  "expected" : {
+    "method": "GET",
+    "path": "/path",
+    "query": {
+      "alligator": ["444"],
+      "hippo": ["555"]
+    },
+    "headers": {},
+    "matchingRules": {
+      "query": {
+        "*": {
+          "matchers": [
+            {
+              "match": "regex",
+              "regex": "\\d+"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "actual": {
+    "method": "GET",
+    "path": "/path",
+    "query": {
+      "alligator": ["123"],
+      "hippo": ["fruitcake"]
+    },
+    "headers": {}
+  }
+}

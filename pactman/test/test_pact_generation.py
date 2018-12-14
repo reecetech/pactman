@@ -94,8 +94,8 @@ def test_pact_request_handler_write_pact(monkeypatch, config_patched, version):
     my_pact = PactRequestHandler(config_patched)
     os.path.exists.return_value = False
     expected_pact = {
-        "consumer": "CONSUMER" if version[0] == "2" else {"name": "CONSUMER"},
-        "provider": "PROVIDER" if version[0] == "2" else {"name": "PROVIDER"},
+        "consumer": {"name": "CONSUMER"},
+        "provider": {"name": "PROVIDER"},
         "interactions": [None],
         "metadata": {
             'pactSpecification': {'version': version}
