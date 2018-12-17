@@ -175,7 +175,7 @@ patch `urllib3`, which is the library underpinning `requests` and is also used b
 are using a different library to make your HTTP requests which does not use `urllib3` underneath then you will need
 to set the `use_mocking_server` argument to `True`. This causes `pactman` to run an actual HTTP server to mock the
 requests (the server is listening on `pact.uri` - use that to redirect your HTTP requests to the mock server.) You
-may also set the `USE_MOCKING_SERVER` environment variable to "yes" to force your entire suite to use the server
+may also set the `PACT_USE_MOCKING_SERVER` environment variable to "yes" to force your entire suite to use the server
 approach.
 
 ```python
