@@ -316,6 +316,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.6.1
+
+- Fix issue where mocked `urlopen` didn't handle the correct number of positional arguments
+
 2.6.0
 
 - Fix several issues cause by a failure to detect failure in several test cases
