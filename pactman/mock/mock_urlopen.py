@@ -99,7 +99,11 @@ class MockURLOpenHandler(PactRequestHandler):
         if 'headers' in interaction['response']:
             headers.update(interaction['response']['headers'])
         if 'body' in interaction['response']:
-            body = io.BytesIO(json.dumps(interaction['response']['body']).encode('utf8'))
+            if isinstance(interaction['response']['body'], str):
+                body_str = interaction['response']['body']
+            else:
+                body_str = json.dumps(interaction['response']['body'])
+            body = io.BytesIO(body_str.encode('utf8'))
             if not any(h for h in self.headers if h[0].lower() == 'content-type'):
                 headers['Content-Type'] = 'application/json; charset=utf-8'
         else:
