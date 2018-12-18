@@ -339,6 +339,9 @@ From there you can use pip to install it:
 
 - Added `and_given()` as a method of defining additonal provider states for v3+ pacts
 - Added more tests for pact generation (serialisation) which fixed a few edge case bugs
+
+2.6.1
+
 - Fix issue where mocked `urlopen` didn't handle the correct number of positional arguments
 
 2.6.0
