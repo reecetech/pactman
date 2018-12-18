@@ -72,9 +72,7 @@ class Request:
             matchingRules['body'] = body_rules
         query_rules = get_matching_rules_v3(self.query, 'query')
         if query_rules:
-            print('generate_v3_matchingRules', query_rules)
             expand_query_rules(query_rules)
-            print('wat', query_rules)
             matchingRules['query'] = query_rules
         return matchingRules
 
