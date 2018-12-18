@@ -386,7 +386,7 @@ From there you can use pip to install it:
 [consumer driven contract testing]: https://2018.pycon-au.org/talks/44811-pact-in-python/
 [context manager]: https://en.wikibooks.org/wiki/Python_Programming/Context_Managers
 [Pact]: https://www.gitbook.com/book/pact-foundation/pact/details
-[Pact Broker]: https://docs.pact.io/documentation/sharings_pacts.html
+[Pact Broker]: https://docs.pact.io/getting_started/sharing_pacts
 [Pact documentation]: https://docs.pact.io/
 [Pact Mock Service]: https://github.com/bethesque/pact-mock_service
 [Pact specification]: https://github.com/pact-foundation/pact-specification
