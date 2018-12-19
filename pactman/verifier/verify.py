@@ -40,7 +40,7 @@ class Interaction:
             self.result.end()
 
     def run_service(self, service_url):
-        method = self.request['method']
+        method = self.request['method'].upper()
         handler = getattr(self, f'service_{method}', None)
         if handler is None:
             return self.result.fail(f'Request method {method} not implemented in verifier')
