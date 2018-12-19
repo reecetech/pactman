@@ -105,7 +105,7 @@ class Pact(object):
     def uri(self):
         return '{scheme}://{host_name}:{port}'.format(host_name=self.host_name, port=self.port, scheme=self.scheme)
 
-    def given(self, provider_state):
+    def given(self, provider_state, **params):
         """
         Define the provider state for this pact.
 
@@ -115,23 +115,32 @@ class Pact(object):
         In pact v2 the provider state is a short sentence that is unique to describe
         the provider state for this contract. For example:
 
-            "an alligator with the given name Mary exists and the user Fred is logged in"
+            "an alligator with the given name Mary exists and the spam nozzle is operating"
 
         In pact v3 the provider state is a list of state specifications with a name and
-        associated params to define specific values for the state. For example:
+        associated params to define specific values for the state. This may be provided
+        in two ways. Either call with a single list, for example:
 
             [
                 {
                     "name": "an alligator with the given name exists",
                     "params": {"name" : "Mary"}
                 }, {
-                    "name": "the user is logged in",
-                    "params" : { "username" : "Fred"}
+                    "name": "the spam nozzle is operating",
+                    "params" : {}
                 }
             ]
 
+        or for convenience call `.given()` with a string as in v2, which implies a single
+        provider state, with params taken from keyword arguments like so:
+
+            .given("an alligator with the given name exists", name="Mary")
+
+        If additional provider states are required for a v3 pact you may either use the list
+        form above, or make an additional call to `.and_given()`.
+
         :param provider_state: The state as described above.
-        :type provider_state: basestring
+        :type provider_state: string or list as above
         :rtype: Pact
         """
         if self.semver["major"] < 3:
@@ -140,9 +149,30 @@ class Pact(object):
                 raise ValueError('pact v2 provider states must be strings')
         else:
             provider_state_key = 'providerStates'
-            if not isinstance(provider_state, list):
+            if isinstance(provider_state, str):
+                provider_state = [{'name': provider_state, 'params': params}]
+            elif not isinstance(provider_state, list):
                 raise ValueError('pact v3+ provider states must be lists of {name: "", params: {}} specs')
         self._interactions.insert(0, {provider_state_key: provider_state})
+        return self
+
+    def and_given(self, provider_state, **params):
+        """
+        Define an additional provider state for this pact.
+
+        Supply the provider state name and any params taken in keyword arguments like so:
+
+            .given("an alligator with the given name exists", name="Mary")
+
+        :param provider_state: The state as described above.
+        :type provider_state: string or list as above
+        :rtype: Pact
+        """
+        if self.semver["major"] < 3:
+            raise ValueError('pact v2 only allows a single provider state')
+        elif not self._interactions:
+            raise ValueError('only invoke and_given() after given()')
+        self._interactions[-1]['providerStates'].append({'name': provider_state, 'params': params})
         return self
 
     def setup(self):

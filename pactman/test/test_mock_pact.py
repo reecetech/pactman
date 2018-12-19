@@ -2,8 +2,6 @@ import os
 from unittest import TestCase
 from unittest.mock import patch, call
 
-import pytest
-
 from pactman.mock.consumer import Consumer
 from pactman.mock.provider import Provider
 from pactman.mock.pact import Pact
@@ -106,11 +104,6 @@ class PactTestCase(TestCase):
             'body': 'success',
             'headers': {'Content-Type': 'application/json'}})
 
-    def test_definition_v3_requires_new_providerStates(self):
-        target = Pact(self.consumer, self.provider, version='3.0.0')
-        with pytest.raises(ValueError):
-            target.given('I am creating a new pact using the Pact class')
-
     def test_definition_v3(self):
         target = Pact(self.consumer, self.provider, version='3.0.0')
         (target
@@ -142,6 +135,13 @@ class PactTestCase(TestCase):
             'status': 200,
             'body': 'success',
             'headers': {'Content-Type': 'application/json'}})
+
+    def test_definition_v3_requires_new_providerStates(self):
+        target = Pact(self.consumer, self.provider, version='3.0.0')
+        target.given('I am creating a new pact using the Pact class')
+        self.assertEqual(
+            target._interactions[0]['providerStates'],
+            [{'name': 'I am creating a new pact using the Pact class', 'params': {}}])
 
     def test_definition_multiple_interactions(self):
         target = Pact(self.consumer, self.provider)

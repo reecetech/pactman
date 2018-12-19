@@ -1,0 +1,21 @@
+{
+  "match": true,
+  "comment": "Queries are the same",
+  "expected" : {
+    "method": "GET",
+    "path": "/path",
+    "query": "alligator=Mary&hippo=John",
+    "headers": {},
+    "matchingRules": {
+        "$.query": {
+          "match": "type"
+        }
+      }
+  },
+  "actual": {
+    "method": "GET",
+    "path": "/path",
+    "query": "alligator=Alex&hippo=Sam",
+    "headers": {}
+  }
+}

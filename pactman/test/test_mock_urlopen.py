@@ -3,7 +3,7 @@ from urllib3.response import HTTPResponse
 from unittest.mock import Mock, call, patch
 import urllib3.poolmanager
 
-from pactman.mock.mock_urlopen import patcher
+from pactman.mock.mock_urlopen import patcher, MockURLOpenHandler
 
 
 def test_patched_urlopen_calls_service_with_request_parameters():
@@ -32,3 +32,25 @@ def test_patched_urlopen_handles_many_positional_arguments(HTTPConnectionPool_ur
         patcher.remove_service(mock_service)
     expected_call = call('POST', '/path', 'body1', {}, None, True, False)
     assert HTTPConnectionPool_urlopen.call_args == expected_call
+
+
+def test_urlopen_responder_handles_json_body():
+    h = MockURLOpenHandler(Mock())
+
+    interaction = dict(
+        response=dict(body={'message': 'hello world'}, status=200)
+    )
+    r = h.respond_for_interaction(interaction)
+
+    assert r.data == b'{"message": "hello world"}'
+
+
+def test_urlopen_responder_handles_string_body():
+    h = MockURLOpenHandler(Mock())
+
+    interaction = dict(
+        response=dict(body="hello world", status=200)
+    )
+    r = h.respond_for_interaction(interaction)
+
+    assert r.data == b'"hello world"'

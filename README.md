@@ -183,6 +183,25 @@ from pactman import Consumer, Provider
 pact = Consumer('Consumer').has_pact_with(Provider('Provider'), use_mocking_server=True)
 ```
 
+### Some words about given()
+You use `given()` to indicate to the provider that they should have some state in order to
+be able to satisfy the interaction. You should agree upon the state and its specification
+in discussion with the provider.
+
+If you are defining a version 3 pact you may define provider states more richly, for example:
+
+```python
+(pact
+    .given("this is a simple state as in v2")
+    .and_given("also the user must exist", username="alex")
+)
+```
+
+Now you may specify additional parameters to accompany your provider state text. These are
+passed as keyword arguments, and they're optional. You may also provider additional provider
+states using the `and_given()` call, which may be invoked many times if necessary. It and
+`given()` have the same calling convention: a provider state name and any optional parameters.
+
 ## Expecting Variable Content
 The above test works great if that user information is always static, but what happens if
 the user has a last updated field that is set to the current time every time the object is
@@ -315,6 +334,11 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+2.7.0
+
+- Added `and_given()` as a method of defining additonal provider states for v3+ pacts
+- Added more tests for pact generation (serialisation) which fixed a few edge case bugs
 
 2.6.1
 

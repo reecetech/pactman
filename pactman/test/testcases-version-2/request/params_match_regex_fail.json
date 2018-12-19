@@ -1,0 +1,22 @@
+{
+  "match": false,
+  "comment": "Queries fail matching by regex",
+  "expected" : {
+    "method": "GET",
+    "path": "/path",
+    "query": "alligator=1234&hippo=John",
+    "headers": {},
+    "matchingRules": {
+        "$.query.alligator": {
+          "match": "regex",
+          "regex": "\\d+"
+        }
+      }
+  },
+  "actual": {
+    "method": "GET",
+    "path": "/path",
+    "query": "alligator=Alex&hippo=John",
+    "headers": {}
+  }
+}
