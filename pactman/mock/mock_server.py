@@ -1,4 +1,3 @@
-import json
 import logging
 import queue
 import traceback
@@ -115,18 +114,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler, PactRequestHandler):
         if 'headers' in interaction['response']:
             self.response_headers.update(interaction['response']['headers'])
         if 'body' in interaction['response']:
-            is_json = False
-            for h in self.response_headers:
-                if h.lower() == 'content-type':
-                    is_json = self.response_headers[h].startswith('application/json')
-                    break
-            else:
-                is_json = True
-                self.response_headers['Content-Type'] = 'application/json; charset=utf-8'
-            if is_json:
-                self.response_body = json.dumps(interaction['response']['body']).encode('utf8')
-            else:
-                self.response_body = interaction['response']['body']
+            self.response_body = self.handle_response_encoding(interaction['response'], self.response_headers)
 
     def do_DELETE(self):
         self.run_request('DELETE')

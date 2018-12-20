@@ -1,3 +1,4 @@
+# -*- encoding: utf8 -*-
 import urllib3
 from urllib3.response import HTTPResponse
 from unittest.mock import Mock, call, patch
@@ -43,9 +44,10 @@ def test_urlopen_responder_handles_json_body():
     r = h.respond_for_interaction(interaction)
 
     assert r.data == b'{"message": "hello world"}'
+    assert r.headers['Content-Type'] == 'application/json; charset=UTF-8'
 
 
-def test_urlopen_responder_handles_string_body():
+def test_urlopen_responder_handles_json_string_body():
     h = MockURLOpenHandler(Mock())
 
     interaction = dict(
@@ -54,3 +56,34 @@ def test_urlopen_responder_handles_string_body():
     r = h.respond_for_interaction(interaction)
 
     assert r.data == b'"hello world"'
+    assert r.headers['Content-Type'] == 'application/json; charset=UTF-8'
+
+
+def test_urlopen_responder_handles_json_encoding():
+    h = MockURLOpenHandler(Mock())
+
+    interaction = dict(
+        response=dict(
+            headers={'content-type': 'application/json; charset=utf-8'},
+            body="héllo world", status=200,
+        ),
+    )
+    r = h.respond_for_interaction(interaction)
+
+    assert r.data == b'"h\\u00e9llo world"'
+    assert r.headers['Content-Type'] == 'application/json; charset=utf-8'
+
+
+def test_urlopen_responder_handles_non_json_body():
+    h = MockURLOpenHandler(Mock())
+
+    interaction = dict(
+        response=dict(
+            headers={'content-type': 'text/plain; charset=utf-8'},
+            body="héllo world".encode('utf-8'), status=200,
+        ),
+    )
+    r = h.respond_for_interaction(interaction)
+
+    assert r.data == b'h\xc3\xa9llo world'
+    assert r.headers['Content-Type'] == 'text/plain; charset=utf-8'
