@@ -5,6 +5,7 @@ import urllib.parse
 
 import semver
 
+from pactman.verifier.parse_header import get_header_param
 from ..verifier.verify import RequestVerifier
 from ..verifier.result import Result
 
@@ -111,6 +112,22 @@ class PactRequestHandler:
 
     def respond_for_interaction(self, reason):
         raise NotImplementedError()
+
+    def handle_response_encoding(self, response, headers):
+        # default to content-type to json
+        # rfc4627 states JSON is Unicode and defaults to UTF-8
+        content_type = [headers[h] for h in headers if h.lower() == 'content-type']
+        if content_type:
+            content_type = content_type[0]
+            if 'application/json' not in content_type:
+                return response['body']
+            charset = get_header_param(content_type, 'charset')
+            if not charset:
+                charset = 'UTF-8'
+        else:
+            headers['Content-Type'] = 'application/json; charset=UTF-8'
+            charset = 'UTF-8'
+        return json.dumps(response['body']).encode(charset)
 
     def write_pact(self, interaction):
         filename = self.config.pact_filename()

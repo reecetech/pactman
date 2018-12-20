@@ -53,3 +53,10 @@ def parse_header(line):
             else:
                 key.append(option)
         yield Part(key, params)
+
+
+def get_header_param(header, name):
+    for header_part in parse_header(header):
+        for param, value in header_part.params:
+            if param == name:
+                return value

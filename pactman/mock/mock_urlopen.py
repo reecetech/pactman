@@ -1,5 +1,4 @@
 import io
-import json
 import logging
 import urllib3.connectionpool
 import urllib3.poolmanager
@@ -99,12 +98,10 @@ class MockURLOpenHandler(PactRequestHandler):
         if 'headers' in interaction['response']:
             headers.update(interaction['response']['headers'])
         if 'body' in interaction['response']:
-            body = io.BytesIO(json.dumps(interaction['response']['body']).encode('utf8'))
-            if not any(h for h in headers if h[0].lower() == 'content-type'):
-                headers['Content-Type'] = 'application/json; charset=utf-8'
+            body = self.handle_response_encoding(interaction['response'], headers)
         else:
-            body = io.BytesIO(b'')
-        return HTTPResponse(body=body,
+            body = b''
+        return HTTPResponse(body=io.BytesIO(body),
                             status=interaction['response']['status'],
                             preload_content=False,
                             headers=headers)

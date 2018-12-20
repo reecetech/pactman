@@ -284,6 +284,22 @@ EachLike({
 
 For more information see [Matching](https://docs.pact.io/documentation/matching.html)
 
+### Body payload rules
+The `body` payload is assumed to be JSON data. In the absence of a `Content-Type` header
+we assume `Content-Type: application/json; charset=UTF-8` (JSON text is Unicode and the
+default encoding is UTF-8).
+
+During verification non-JSON payloads are compared for equality
+
+During mocking, the HTTP response will be handled as:
+
+1. If there's no `Content-Type` header, assume JSON: serialise with `json.dumps()`, encode to
+   UTF-8 and add the header `Content-Type: application/json; charset=UTF-8`.
+2. If there's a `Content-Type` header and it says `application/json` then serialise with
+   json.dumps() and use the charset in the header, defaulting to UTF-8.
+3. Otherwise pass through the `Content-Type` header and body as-is.
+   Binary data is not supported.
+
 ## Verifying Pacts Against a Service
 Run `pactman-verifier -h` to see the options available. To run all pacts registered to a provider in a [Pact Broker]:
 
@@ -334,6 +350,10 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+2.8.0
+
+- Close up some edge cases in body content during mocking, and document in README
 
 2.7.0
 
