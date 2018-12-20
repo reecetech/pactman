@@ -180,7 +180,7 @@ class ResponseVerifier:
                     else:
                         rule_section = 'headers'
                     if not self.check_rules(actual, expected, [rule_section, header]):
-                        log.info(f'{self.interaction_name} headers: {response.json()}')
+                        log.info(f'{self.interaction_name} headers: {response.headers}')
                         return False
         if self.body is not MISSING:
             if not self.check_rules(response.json(), self.body, ['body']):
@@ -199,13 +199,12 @@ class ResponseVerifier:
                 r = self.compare_header(data, spec, path)
             else:
                 r = self.compare(data, spec, ['body'])
-        log.debug(f'check_rules DONE = {r!r}')
+        log.debug(f'check_rules success={r!r}')
         return r
 
     def compare_header(self, data, spec, path):
         parsed_data = sorted(parse_header(data))
         parsed_spec = sorted(parse_header(spec))
-        print(parsed_data, parsed_spec)
         log.debug(f'compare_header {parsed_data} {parsed_spec}')
         if parsed_data == parsed_spec:
             return True
@@ -282,11 +281,11 @@ class ResponseVerifier:
         # we passed the matchingRule but we also need to check the contents of arrays/dicts
         if fold_type(spec) is list:
             r = self.apply_rules_array(data, spec, path)
-            log.debug(f'apply_rules {format_path(path)} DONE = {r!r}')
+            log.debug(f'apply_rules {format_path(path)} success={r!r}')
             return r
         elif fold_type(spec) is dict:
             r = self.apply_rules_dict(data, spec, path)
-            log.debug(f'apply_rules {format_path(path)} DONE = {r!r}')
+            log.debug(f'apply_rules {format_path(path)} success={r!r}')
             return r
         elif not weighted_rule:
             if path[0] in ('header', 'headers'):
@@ -342,7 +341,7 @@ class ResponseVerifier:
             if not self.apply_rules_array_element(data_elem, spec, path + [index], index):
                 log.debug(f'apply_rules_array {path!r} failing on item {index}')
                 return False
-        log.debug(f'apply_rules_array {path!r} DONE = True')
+        log.debug(f'apply_rules_array {path!r} success=True')
         return True
 
     def apply_rules_array_element(self, data, spec, path, index):
