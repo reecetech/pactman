@@ -1,5 +1,7 @@
 # pactman
 
+[![](https://img.shields.io/pypi/v/pactman.svg)](https://pypi.org/project/pactman/)
+
 Python version of Pact mocking, generation and verification.
 
 Enables [consumer driven contract testing], providing unit test mocking of provider services
