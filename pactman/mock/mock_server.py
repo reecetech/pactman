@@ -1,7 +1,7 @@
 import logging
 import queue
 import traceback
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from multiprocessing import Process, Queue
 
 from .pact_request_handler import PactRequestHandler
@@ -12,18 +12,18 @@ _providers = {}
 log = logging.getLogger(__name__)
 
 
-def getMockServer(config):
-    if config.provider_name not in _providers:
-        _providers[config.provider_name] = Server(config)
-    return _providers[config.provider_name]
+def getMockServer(pact):
+    if pact.provider.name not in _providers:
+        _providers[pact.provider.name] = Server(pact)
+    return _providers[pact.provider.name]
 
 
 class Server:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, pact):
+        self.pact = pact
         self.interactions = Queue()
         self.results = Queue()
-        self.process = Process(target=run_server, args=(config, self.interactions, self.results))
+        self.process = Process(target=run_server, args=(pact, self.interactions, self.results))
         self.process.start()
 
     def setup(self, interactions):
@@ -42,21 +42,21 @@ class Server:
         self.process.terminate()
 
 
-def run_server(config, interactions, results):
-    httpd = MockServer(config, interactions, results)
+def run_server(pact, interactions, results):
+    httpd = MockServer(pact, interactions, results)
     httpd.serve_forever()
 
 
 class MockServer(HTTPServer):
-    def __init__(self, config, interactions, results):
-        self.config = config
+    def __init__(self, pact, interactions, results):
+        self.pact = pact
         self.incoming_interactions = interactions
         self.outgoing_results = results
-        server_address = ('', config.port)
+        server_address = ('', pact.port)
         super().__init__(server_address, MockHTTPRequestHandler)
         self.interactions = []
-        self.log = logging.getLogger(__name__ + '.' + config.provider_name)
-        self.log.addHandler(logging.FileHandler(f'{config.log_dir}/{config.provider_name}.log'))
+        self.log = logging.getLogger(__name__ + '.' + pact.provider.name)
+        self.log.addHandler(logging.FileHandler(f'{pact.log_dir}/{pact.provider.name}.log'))
         self.log.setLevel(logging.DEBUG)
         self.log.propagate = False
 
@@ -69,7 +69,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler, PactRequestHandler):
         self.response_status_code = None
         self.response_headers = {}
         self.response_body = None
-        PactRequestHandler.__init__(self, server.config)
+        PactRequestHandler.__init__(self, server.pact)
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
     def error_result(self, message, content='', status='error', status_code=500):

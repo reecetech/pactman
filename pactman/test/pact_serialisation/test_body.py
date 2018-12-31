@@ -1,7 +1,4 @@
-from unittest.mock import Mock
-
-from pactman import Consumer, Provider, EachLike
-from pactman.mock.pact_request_handler import construct_pact
+from pactman import Consumer, EachLike, Provider
 
 
 def test_eachlike():
@@ -13,8 +10,7 @@ def test_eachlike():
         .will_respond_with(200, body={"results": EachLike(1)})
     )
 
-    result = construct_pact(Mock(consumer_name='consumer', provider_name='provider',
-                                 version='2.0.0'), pact._interactions[0])
+    result = pact.construct_pact(pact._interactions[0])
     assert result == {
         'consumer': {'name': 'consumer'},
         'provider': {'name': 'provider'},

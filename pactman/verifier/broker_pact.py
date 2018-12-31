@@ -13,7 +13,6 @@ from restnavigator import Navigator
 from .result import LoggedResult
 from .verify import Interaction
 
-
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 

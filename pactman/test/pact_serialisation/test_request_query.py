@@ -1,7 +1,4 @@
-from unittest.mock import Mock
-
-from pactman import Consumer, Provider, Like
-from pactman.mock.pact_request_handler import construct_pact
+from pactman import Consumer, Like, Provider
 
 
 def test_v2():
@@ -10,8 +7,7 @@ def test_v2():
     pact.given("the condition exists").upon_receiving("a request") \
         .with_request("GET", "/path", query="fields=first,second").will_respond_with(200, body='ok')
 
-    result = construct_pact(Mock(consumer_name='consumer', provider_name='provider',
-                                 version='2.0.0'), pact._interactions[0])
+    result = pact.construct_pact(pact._interactions[0])
     assert result == {
         'consumer': {'name': 'consumer'},
         'provider': {'name': 'provider'},
@@ -33,8 +29,7 @@ def test_v3():
     pact.given([{'name': "the condition exists", 'params': {}}]).upon_receiving("a request") \
         .with_request("GET", "/path", query=dict(fields='first,second')).will_respond_with(200, body='ok')
 
-    result = construct_pact(Mock(consumer_name='consumer', provider_name='provider',
-                                 version='3.0.0'), pact._interactions[0])
+    result = pact.construct_pact(pact._interactions[0])
     assert result == {
         'consumer': {'name': 'consumer'},
         'provider': {'name': 'provider'},
@@ -57,8 +52,7 @@ def test_like_v2():
     pact.given("the condition exists").upon_receiving("a request") \
         .with_request("GET", "/path", query=Like("fields=first,second")).will_respond_with(200, body='ok')
 
-    result = construct_pact(Mock(consumer_name='consumer', provider_name='provider',
-                                 version='2.0.0'), pact._interactions[0])
+    result = pact.construct_pact(pact._interactions[0])
     assert result == {
         'consumer': {'name': 'consumer'},
         'provider': {'name': 'provider'},
@@ -85,8 +79,7 @@ def test_like_v3():
         .will_respond_with(200, body='ok')
     )
 
-    result = construct_pact(Mock(consumer_name='consumer', provider_name='provider',
-                                 version='3.0.0'), pact._interactions[0])
+    result = pact.construct_pact(pact._interactions[0])
     assert result == {
         'consumer': {'name': 'consumer'},
         'provider': {'name': 'provider'},
@@ -113,8 +106,7 @@ def test_broader_like_v3():
         .will_respond_with(200, body='ok')
     )
 
-    result = construct_pact(Mock(consumer_name='consumer', provider_name='provider',
-                                 version='3.0.0'), pact._interactions[0])
+    result = pact.construct_pact(pact._interactions[0])
     assert result == {
         'consumer': {'name': 'consumer'},
         'provider': {'name': 'provider'},

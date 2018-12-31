@@ -1,5 +1,4 @@
 import pytest
-
 from pactman.verifier.parse_header import Part, parse_header
 
 

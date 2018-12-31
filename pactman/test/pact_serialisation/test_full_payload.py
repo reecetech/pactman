@@ -1,7 +1,4 @@
-from unittest.mock import Mock
-
 from pactman import Consumer, Provider
-from pactman.mock.pact_request_handler import construct_pact
 
 
 def test_full_payload_v2():
@@ -11,8 +8,7 @@ def test_full_payload_v2():
         .upon_receiving('a request for UserA')
         .with_request('get', '/users/UserA')
         .will_respond_with(200, body={'username': 'UserA'}))
-    result = construct_pact(Mock(consumer_name='consumer', provider_name='provider',
-                                 version='2.0.0'), pact._interactions[0])
+    result = pact.construct_pact(pact._interactions[0])
     assert result == {
         'consumer': {'name': 'consumer'},
         'provider': {'name': 'provider'},
@@ -35,8 +31,7 @@ def test_full_payload_v3():
      .upon_receiving('a request for UserA')
      .with_request('get', '/users/UserA')
      .will_respond_with(200, body={'username': 'UserA'}))
-    result = construct_pact(Mock(consumer_name='consumer', provider_name='provider',
-                                 version='3.0.0'), pact._interactions[0])
+    result = pact.construct_pact(pact._interactions[0])
     assert result == {
         'consumer': {'name': 'consumer'},
         'provider': {'name': 'provider'},

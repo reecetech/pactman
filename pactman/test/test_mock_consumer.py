@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 from pactman.mock.consumer import Consumer
-from pactman.mock.provider import Provider
 from pactman.mock.pact import Pact
+from pactman.mock.provider import Provider
 
 
 class ConsumerTestCase(TestCase):
@@ -23,7 +23,7 @@ class ConsumerTestCase(TestCase):
         self.assertIs(result, self.mock_service.return_value)
         self.mock_service.assert_called_once_with(
             consumer=self.consumer, provider=self.provider,
-            host_name='localhost', port=1234,
+            host_name='localhost', port=None,
             log_dir=None, ssl=False, sslcert=None, sslkey=None,
             pact_dir=None, version='2.0.0', use_mocking_server=False)
 
