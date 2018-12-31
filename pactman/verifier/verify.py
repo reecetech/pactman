@@ -401,7 +401,7 @@ class RequestVerifier(ResponseVerifier):
         return super().verify(request)
 
     def verify_query(self, spec_query, request):
-        if self.pact.semver['major'] < 3:
+        if isinstance(spec_query, str):
             spec_query = parse_qs(spec_query)
         request_query = request.query
         if isinstance(request_query, str):

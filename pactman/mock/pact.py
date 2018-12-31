@@ -264,12 +264,18 @@ class Pact(object):
                                                      body=body).json(self.version)
         return self
 
+    _auto_mocked = False
+
     def __enter__(self):
         """
         Handler for entering a Python context.
 
         Sets up the mock service to expect the client requests.
         """
+        if not self.use_mocking_server and not self._mock_handler:
+            self._auto_mocked = True
+            self.start_mocking()
+
         self.setup()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -283,3 +289,6 @@ class Pact(object):
             return
 
         self.verify()
+
+        if not self.use_mocking_server and self._auto_mocked:
+            self.stop_mocking()

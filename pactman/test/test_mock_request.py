@@ -1,6 +1,8 @@
+import pytest
+import requests
 from unittest import TestCase
 
-from pactman import Term, Like
+from pactman import Term, Like, Consumer, Provider
 from pactman.mock.request import Request
 
 
@@ -76,3 +78,23 @@ class RequestTestCase(TestCase):
                 }
             }
         })
+
+
+def test_immediate_pact_usage():
+    pact = Consumer('C').has_pact_with(Provider('P')) \
+        .given("g").upon_receiving("r").with_request("get", "/", query={"foo": ["bar"]}).will_respond_with(200)
+    with pact:
+        requests.get(pact.uri, params={"foo": ["bar"]})
+
+    # force a failure
+    pact = Consumer('C').has_pact_with(Provider('P')) \
+        .given("g").upon_receiving("r").with_request("get", "/", query={"bar": ["foo"]}).will_respond_with(200)
+    with pytest.raises(AssertionError):
+        with pact:
+            requests.get(pact.uri, params={"foo": ["bar"]})
+
+    # make sure mocking still works
+    pact = Consumer('C').has_pact_with(Provider('P')) \
+        .given("g").upon_receiving("r").with_request("get", "/", query={"bar": ["foo"]}).will_respond_with(400)
+    with pact:
+        requests.get(pact.uri, params={"bar": ["foo"]})

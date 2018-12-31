@@ -72,8 +72,6 @@ from pactman import Consumer, Provider
 
 
 pact = Consumer('Consumer').has_pact_with(Provider('Provider'))
-pact.start_mocking()
-atexit.register(pact.stop_mocking)
 
 
 class GetUserInfoContract(unittest.TestCase):
@@ -109,8 +107,18 @@ This does a few important things:
 Using the Pact object as a [context manager], we call our method under test
 which will then communicate with the Pact mock service. The mock service will respond with
 the items we defined, allowing us to assert that the method processed the response and
-returned the expected value. If you want more control over when the mock service is
-configured and the interactions verified, use the `setup` and `verify` methods, respectively:
+returned the expected value. You need to start and stop that mocking service, with code like:
+
+```python
+import atexit
+
+pact = ...
+pact.start_mocking()
+atexit.register(pact.stop_mocking)
+```
+
+If you want more control over when the mock service is configured and the interactions verified,
+use the `setup` and `verify` methods, respectively:
 
 ```python
     pact.given(
@@ -356,6 +364,7 @@ From there you can use pip to install it:
 2.9.0
 
 - Fix `with_request` when called with a dict query (thanks Cong)
+- Make `start_mocking()` and `stop_mocking()` optional with non-server mocking
 
 2.8.0
 

@@ -45,7 +45,7 @@ def test_config_init(monkeypatch, file_write_mode):
     assert(my_conf.version == version)
     assert(my_conf.semver == semver.parse(version))
     my_conf.allocate_port.assert_called_once_with()
-    assert(my_conf.PORT_NUMBER == 8150)
+    assert(my_conf.PORT_NUMBER == Config.PORT_NUMBER)
     pact_request_handler.ensure_pact_dir.assert_called_once_with(pact_dir)
     if file_write_mode == "overwrite":
         my_conf.pact_filename.assert_called_once_with()
