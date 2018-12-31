@@ -23,6 +23,21 @@ to the ruby implementation. This allows for a much nicer mocking user experience
 directly), is faster, less messy configuration (multiple providers means multiple ruby processes spawned
 on different ports).
 
+Where `pact-python` required management of a background Ruby server, and manually starting and stopping
+it, `pactman` allows a much nicer usage like:
+
+```python
+import requests
+from pactman import Consumer, Provider
+
+def test_interaction():
+    pact = Consumer('Consumer').has_pact_with(Provider('Provider')) \
+        .given("some data exists").upon_receiving("a request") \
+        .with_request("get", "/", query={"foo": ["bar"]}).will_respond_with(200)
+    with pact:
+        requests.get(pact.uri, params={"foo": ["bar"]})
+```
+
 It also supports a broader set of the pact specification (versions 1.1 through to 3).
 
 The pact verifier has been engineered from the start to talk to a pact broker (both to discover pacts
@@ -65,13 +80,8 @@ def get_user(user_name):
 Then `Consumer`'s contract test might look something like this:
 
 ```python
-import atexit
 import unittest
-
 from pactman import Consumer, Provider
-
-
-pact = Consumer('Consumer').has_pact_with(Provider('Provider'))
 
 
 class GetUserInfoContract(unittest.TestCase):
@@ -82,7 +92,7 @@ class GetUserInfoContract(unittest.TestCase):
       'groups': ['Editors']
     }
 
-    pact.given(
+    Consumer('Consumer').has_pact_with(Provider('Provider')).given(
         'UserA exists and is not an administrator'
     ).upon_receiving(
         'a request for UserA'
@@ -94,7 +104,6 @@ class GetUserInfoContract(unittest.TestCase):
       result = get_user('UserA')
 
     self.assertEqual(result, expected)
-
 ```
 
 This does a few important things:
@@ -107,21 +116,13 @@ This does a few important things:
 Using the Pact object as a [context manager], we call our method under test
 which will then communicate with the Pact mock service. The mock service will respond with
 the items we defined, allowing us to assert that the method processed the response and
-returned the expected value. You need to start and stop that mocking service, with code like:
-
-```python
-import atexit
-
-pact = ...
-pact.start_mocking()
-atexit.register(pact.stop_mocking)
-```
+returned the expected value.
 
 If you want more control over when the mock service is configured and the interactions verified,
 use the `setup` and `verify` methods, respectively:
 
 ```python
-    pact.given(
+    Consumer('Consumer').has_pact_with(Provider('Provider')).given(
         'UserA exists and is not an administrator'
     ).upon_receiving(
         'a request for UserA'
@@ -186,12 +187,19 @@ are using a different library to make your HTTP requests which does not use `url
 to set the `use_mocking_server` argument to `True`. This causes `pactman` to run an actual HTTP server to mock the
 requests (the server is listening on `pact.uri` - use that to redirect your HTTP requests to the mock server.) You
 may also set the `PACT_USE_MOCKING_SERVER` environment variable to "yes" to force your entire suite to use the server
-approach.
+approach. You should declare the pact particpants (consumer and provider) outside of your tests and will need
+to start and stop the mocking service outside of your tests too. The code below shows what using the server might
+look like:
 
 ```python
+import atexit
 from pactman import Consumer, Provider
 pact = Consumer('Consumer').has_pact_with(Provider('Provider'), use_mocking_server=True)
-```
+pact.start_mocking()
+atexit.register(pact.stop_mocking)
+``````
+
+You'd then use `pact` to declare pacts between those participants.
 
 ### Some words about given()
 You use `given()` to indicate to the provider that they should have some state in order to
