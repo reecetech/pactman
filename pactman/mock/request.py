@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from .matchers import get_generated_values, get_matching_rules_v2, get_matching_rules_v3
 
 
@@ -23,7 +25,10 @@ class Request:
         self.path = path
         self.body = body
         self.headers = headers
-        self.query = query
+        if isinstance(query, dict):
+            self.query = urlencode(query)
+        else:
+            self.query = query
 
     def json(self, spec_version):
         """Convert the Request to a JSON Pact."""
