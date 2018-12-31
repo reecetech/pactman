@@ -351,6 +351,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.9.0
+
+- Fix `with_request` when called with a dict query (thanks Cong)
+
 2.8.0
 
 - Close up some edge cases in body content during mocking, and document in README
