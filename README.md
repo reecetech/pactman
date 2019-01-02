@@ -114,11 +114,11 @@ This does a few important things:
  - Defines how the server is expected to respond
 
 Using the Pact object as a [context manager], we call our method under test
-which will then communicate with the Pact mock service. The mock service will respond with
+which will then communicate with the Pact mock. The mock will respond with
 the items we defined, allowing us to assert that the method processed the response and
 returned the expected value.
 
-If you want more control over when the mock service is configured and the interactions verified,
+If you want more control over when the mock is configured and the interactions verified,
 use the `setup` and `verify` methods, respectively:
 
 ```python
@@ -225,28 +225,41 @@ The above test works great if that user information is always static, but what h
 the user has a last updated field that is set to the current time every time the object is
 modified? To handle variable data and make your tests more robust, there are 3 helpful matchers:
 
-### Term(matcher, generate)
+### Term(matcher, sample_data)
 Asserts the value should match the given regular expression. You could use this
 to expect a timestamp with a particular format in the request or response where
 you know you need a particular format, but are unconcerned about the exact date:
 
 ```python
 from pactman import Term
-...
-body = {
-    'username': 'UserA',
-    'last_modified': Term('\d+-\d+-\d+T\d+:\d+:\d+', '2016-12-15T20:16:01')
-}
 
 (pact
  .given('UserA exists and is not an administrator')
  .upon_receiving('a request for UserA')
- .with_request('get', '/users/UserA/info')
- .will_respond_with(200, body=body))
+ .with_request(
+   'post',
+   '/users/UserA/info',
+   body={'commencement_date': Term('\d+-\d+-\d', '1972-01-01')})
+ .will_respond_with(200, body={
+    'username': 'UserA',
+    'last_modified': Term('\d+-\d+-\d+T\d+:\d+:\d+', '2016-12-15T20:16:01')
+ }))
 ```
 
-When you run the tests for the consumer, the mock service will return the value you provided
-as `generate`, in this case `2016-12-15T20:16:01`. When the contract is verified on the
+The `matcher` and `sample_data` are used differently by consumer and provider depending
+upon whether they're used in the `with_request()` or `will_respond_with()` sections
+of the pact. Using the above example:
+
+#### Term in request
+When you run the tests for the consumer, the mock will verify that the `commencement_date`
+the consumer uses in its request matches the `matcher` (raising an AssertionError
+if invalid), and then returns the value you provided as `sample_data`, in this case
+`1972-01-01`. When the contract is verified by the provider, the `sample_data` will be
+used in the request to the real provider service.
+
+#### Term in response
+When you run the tests for the consumer, the mock will return the `last_modified` you provided
+as `sample_data`, in this case `2016-12-15T20:16:01`. When the contract is verified on the
 provider, the regex will be used to search the response from the real provider service
 and the test will be considered successful if the regex finds a match in the response.
 
@@ -464,7 +477,6 @@ From there you can use pip to install it:
 [Pact]: https://www.gitbook.com/book/pact-foundation/pact/details
 [Pact Broker]: https://docs.pact.io/getting_started/sharing_pacts
 [Pact documentation]: https://docs.pact.io/
-[Pact Mock Service]: https://github.com/bethesque/pact-mock_service
 [Pact specification]: https://github.com/pact-foundation/pact-specification
 [Pact specification version 3]: https://github.com/pact-foundation/pact-specification/tree/version-3
 [Provider States]: https://docs.pact.io/documentation/provider_states.html
