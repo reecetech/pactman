@@ -2,15 +2,14 @@ import collections
 from unittest.mock import Mock
 
 import pytest
-
-from pactman.verifier.matching_rule import (
-    Matcher,
-    RuleFailed,
-    fold_type,
-    split_path,
-    weight_path,
-    MatchType, MatchNull, MatchInclude, MatchEquality, MatchNumber, MatchDecimal, MatchInteger, MatchRegex,
-    InvalidMatcher, log, rule_matchers_v3, rule_matchers_v2)
+from pactman.verifier.matching_rule import (InvalidMatcher, MatchDecimal,
+                                            MatchEquality, Matcher,
+                                            MatchInclude, MatchInteger,
+                                            MatchNull, MatchNumber, MatchRegex,
+                                            MatchType, RuleFailed, fold_type,
+                                            log, rule_matchers_v2,
+                                            rule_matchers_v3, split_path,
+                                            weight_path)
 
 
 def test_stringify():

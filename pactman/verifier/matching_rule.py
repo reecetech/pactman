@@ -8,7 +8,6 @@ from collections import OrderedDict, defaultdict
 
 from .paths import format_path
 
-
 log = logging.getLogger(__name__)
 
 

@@ -1,8 +1,8 @@
 import io
 import logging
+
 import urllib3.connectionpool
 import urllib3.poolmanager
-
 from urllib3.response import HTTPResponse
 
 from .pact_request_handler import PactRequestHandler
@@ -18,11 +18,11 @@ class MockPool:
 
     @classmethod
     def add_mock(cls, mock):
-        cls.mocks[mock.config.port] = mock
+        cls.mocks[mock.pact.port] = mock
 
     @classmethod
     def remove_mock(cls, mock):
-        del cls.mocks[mock.config.port]
+        del cls.mocks[mock.pact.port]
 
 
 class MockConnectionPool(urllib3.connectionpool.HTTPConnectionPool, MockPool):

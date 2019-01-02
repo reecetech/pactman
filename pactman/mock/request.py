@@ -1,4 +1,5 @@
-from .matchers import get_generated_values, get_matching_rules_v2, get_matching_rules_v3
+from .matchers import (get_generated_values, get_matching_rules_v2,
+                       get_matching_rules_v3)
 
 
 class Request:

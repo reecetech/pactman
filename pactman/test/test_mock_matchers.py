@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from pactman.mock.matchers import EachLike, Like, Matcher, SomethingLike, \
-    Term, from_term, get_generated_values
+from pactman.mock.matchers import (EachLike, Like, Matcher, SomethingLike,
+                                   Term, from_term, get_generated_values)
 
 
 class MatcherTestCase(TestCase):

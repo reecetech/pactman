@@ -1,15 +1,16 @@
 # -*- encoding: utf8 -*-
-import urllib3
-from urllib3.response import HTTPResponse
 from unittest.mock import Mock, call, patch
-import urllib3.poolmanager
 
-from pactman.mock.mock_urlopen import patcher, MockURLOpenHandler
+import urllib3
+import urllib3.poolmanager
+from urllib3.response import HTTPResponse
+
+from pactman.mock.mock_urlopen import MockURLOpenHandler, patcher
 
 
 def test_patched_urlopen_calls_service_with_request_parameters():
-    config = Mock(port=1234)
-    mock_service = Mock(config=config, return_value=HTTPResponse())
+    pact = Mock(port=1234)
+    mock_service = Mock(pact=pact, return_value=HTTPResponse())
     try:
         patcher.add_service(mock_service)
         http = urllib3.PoolManager()

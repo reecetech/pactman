@@ -4,14 +4,21 @@ from __future__ import unicode_literals
 import os
 
 import semver
-from pactman.mock.request import Request
-from pactman.mock.response import Response
+
+from ..mock.request import Request
+from ..mock.response import Response
 from .mock_server import getMockServer
 from .mock_urlopen import MockURLOpenHandler
-from .pact_request_handler import Config
-
 
 USE_MOCKING_SERVER = os.environ.get('PACT_USE_MOCKING_SERVER', 'no') == 'yes'
+
+
+def ensure_pact_dir(pact_dir):
+    if not os.path.exists(pact_dir):
+        parent_dir = os.path.dirname(pact_dir)
+        if not os.path.exists(parent_dir):
+            raise ValueError(f'Pact destination directory {pact_dir} does not exist')
+        os.mkdir(pact_dir)
 
 
 class Pact(object):
@@ -38,7 +45,7 @@ class Pact(object):
 
     HEADERS = {'X-Pact-Mock-Service': 'true'}
 
-    def __init__(self, consumer, provider, host_name='localhost', port=1234,
+    def __init__(self, consumer, provider, host_name='localhost', port=None,
                  log_dir=None, ssl=False, sslcert=None, sslkey=None,
                  pact_dir=None, version='2.0.0',
                  file_write_mode='overwrite', use_mocking_server=USE_MOCKING_SERVER):
@@ -51,7 +58,8 @@ class Pact(object):
         :type provider: pact.Provider
         :param host_name: The host name where the mock service is running.
         :type host_name: str
-        :param port: The port number where the mock service is running.
+        :param port: The port number where the mock service is running. Defaults
+            to a port >= 8050.
         :type port: int
         :param log_dir: The directory where logs should be written. Defaults to
             the current directory.
@@ -89,7 +97,7 @@ class Pact(object):
         self.host_name = host_name
         self.log_dir = log_dir or os.getcwd()
         self.pact_dir = pact_dir or os.getcwd()
-        self.port = port
+        self.port = port or self.allocate_port()
         self.provider = provider
         # TODO implement SSL
         self.ssl = ssl
@@ -104,6 +112,22 @@ class Pact(object):
     @property
     def uri(self):
         return '{scheme}://{host_name}:{port}'.format(host_name=self.host_name, port=self.port, scheme=self.scheme)
+
+    BASE_PORT_NUMBER = 8150
+
+    @classmethod
+    def allocate_port(cls):
+        cls.BASE_PORT_NUMBER += 5
+        return cls.BASE_PORT_NUMBER
+
+    def pact_filename(self):
+        # ensure destination directory exists
+        ensure_pact_dir(self.pact_dir)
+        filename = os.path.join(self.pact_dir, f'{self.consumer.name}-{self.provider.name}-pact.json')
+        if self.file_write_mode == 'overwrite':
+            if os.path.exists(filename):
+                os.remove(filename)
+        return filename
 
     def given(self, provider_state, **params):
         """
@@ -139,10 +163,18 @@ class Pact(object):
         If additional provider states are required for a v3 pact you may either use the list
         form above, or make an additional call to `.and_given()`.
 
+        If you don't have control over the provider, and they cannot implement a provider
+        state, you may use an explicit `None` for the provider state value. This is
+        discouraged as it introduces fragile external dependencies in your tests.
+
         :param provider_state: The state as described above.
         :type provider_state: string or list as above
         :rtype: Pact
         """
+        if provider_state is None:
+            self._interactions.insert(0, {})
+            return self
+
         if self.semver["major"] < 3:
             provider_state_key = 'providerState'
             if not isinstance(provider_state, str):
@@ -179,15 +211,11 @@ class Pact(object):
         self._mock_handler.setup(self._interactions)
 
     def start_mocking(self):
-        # TODO hmm, the config is looking a lot like this Pact instance...
-        config = Config(self.consumer.name, self.provider.name, self.log_dir, self.pact_dir, self.file_write_mode,
-                        self.version)
-        self.port = config.port
         if self.use_mocking_server:
-            self._mock_handler = getMockServer(config)
+            self._mock_handler = getMockServer(self)
         else:
             # ain't no port, we're monkey-patching (but the URLs we generate still need to look correct)
-            self._mock_handler = MockURLOpenHandler(config)
+            self._mock_handler = MockURLOpenHandler(self)
 
     def stop_mocking(self):
         self._mock_handler.terminate()
@@ -292,3 +320,13 @@ class Pact(object):
 
         if not self.use_mocking_server and self._auto_mocked:
             self.stop_mocking()
+
+    def construct_pact(self, interaction):
+        """Construct a pact JSON data structure for the interaction.
+        """
+        return dict(
+            consumer={"name": self.consumer.name},
+            provider={"name": self.provider.name},
+            interactions=[interaction],
+            metadata=dict(pactSpecification=dict(version=self.version)),
+        )

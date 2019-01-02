@@ -373,6 +373,10 @@ From there you can use pip to install it:
 
 - Fix `with_request` when called with a dict query (thanks Cong)
 - Make `start_mocking()` and `stop_mocking()` optional with non-server mocking
+- Add shortcut so `python -m pactman.verifier.command_line` is just `python -m pactman`
+  (mostly used in testing before release)
+- Handle the `None` provider state
+- Ensure pact spec versions are consistent across all mocks used to generate a pact file
 
 2.8.0
 

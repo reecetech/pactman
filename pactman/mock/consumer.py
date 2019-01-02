@@ -4,7 +4,6 @@ import os
 from .pact import Pact
 from .provider import Provider
 
-
 USE_MOCKING_SERVER = os.environ.get('PACT_USE_MOCKING_SERVER', 'no') == 'yes'
 
 
@@ -36,7 +35,7 @@ class Consumer(object):
         self.name = name
         self.service_cls = service_cls
 
-    def has_pact_with(self, provider, host_name='localhost', port=1234,
+    def has_pact_with(self, provider, host_name='localhost', port=None,
                       log_dir=None, ssl=False, sslcert=None, sslkey=None,
                       pact_dir=None, version='2.0.0', use_mocking_server=USE_MOCKING_SERVER):
         """
@@ -61,7 +60,7 @@ class Consumer(object):
         :type host_name: str
         :param port: The TCP port to use when contacting the Pact mock service.
             This will need to tbe the same port used by your code under test
-            to contact the mock service. It defaults to: 1234
+            to contact the mock service. It defaults to a port >= 8050.
         :type port: int
         :param log_dir: The directory where logs should be written. Defaults to
             the current directory.

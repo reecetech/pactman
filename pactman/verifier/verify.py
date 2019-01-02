@@ -3,10 +3,10 @@ from urllib.parse import parse_qs, urljoin
 
 import requests
 
-from .matching_rule import fold_type, nice_type, rule_matchers_v2, rule_matchers_v3, RuleFailed
+from .matching_rule import (RuleFailed, fold_type, nice_type, rule_matchers_v2,
+                            rule_matchers_v3)
 from .parse_header import parse_header
 from .paths import format_path
-
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

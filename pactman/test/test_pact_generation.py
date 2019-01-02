@@ -1,107 +1,133 @@
+import json
+import os
+import requests
+from unittest.mock import Mock, mock_open, patch
+
+import pactman.mock.pact
 import pytest
 import semver
-from unittest.mock import Mock, mock_open, patch
-import os
-from pactman.mock import pact_request_handler
-from pactman.mock.pact_request_handler import Config, MockPact, PactRequestHandler
+from pactman.mock.consumer import Consumer
+from pactman.mock.pact import Pact
+from pactman.mock.pact_request_handler import PactRequestHandler, PactVersionConflict
+from pactman.mock.provider import Provider
 
 
 @pytest.fixture
-def config_patched(monkeypatch):
-    monkeypatch.setattr(Config, "allocate_port", Mock())
-    monkeypatch.setattr(os, "remove", Mock())
-    monkeypatch.setattr(os.path, "exists", Mock())
-    os.path.exists.return_value = True
-    consumer_name = "CONSUMER"
-    provider_name = "PROVIDER"
-    log_dir = "/tmp/a"
-    pact_dir = "/tmp/pact"
-    version = "2.0.0"
-    my_conf = Config(consumer_name, provider_name, log_dir, pact_dir, None, version)
-    return my_conf
+def mock_pact(monkeypatch):
+    def f(file_write_mode=None, version='2.0.0'):
+        monkeypatch.setattr(Pact, "allocate_port", Mock())
+        monkeypatch.setattr(os, "remove", Mock())
+        monkeypatch.setattr(os.path, "exists", Mock(return_value=True))
+        log_dir = "/tmp/a"
+        pact_dir = "/tmp/pact"
+        return Pact(Consumer("CONSUMER"), Provider("PROVIDER"), log_dir=log_dir, pact_dir=pact_dir, version=version,
+                    file_write_mode=file_write_mode)
+    return f
 
 
 @pytest.mark.parametrize("file_write_mode", [None, "overwrite"])
-def test_config_init(monkeypatch, file_write_mode):
-    monkeypatch.setattr(Config, "allocate_port", Mock())
-    monkeypatch.setattr(Config, "pact_filename", Mock())
-    file_name = "/tmp/pact/JSON"
-    Config.pact_filename.return_value = file_name
-    monkeypatch.setattr(os, "remove", Mock())
-    monkeypatch.setattr(os.path, "exists", Mock(return_value=True))
-    monkeypatch.setattr(pact_request_handler, "ensure_pact_dir", Mock())
+def test_pact_init(monkeypatch, file_write_mode, mock_pact):
+    monkeypatch.setattr(pactman.mock.pact, 'ensure_pact_dir', Mock(return_value=True))
+    mock_pact = mock_pact(file_write_mode)
+    mock_pact.pact_filename()
 
-    consumer_name = "CONSUMER"
-    provider_name = "PROVIDER"
-    log_dir = "/tmp/a"
-    pact_dir = "/tmp/pact"
-    version = "2.0.0"
-    my_conf = Config(consumer_name, provider_name, log_dir, pact_dir, file_write_mode, version)
-
-    assert(my_conf.consumer_name == consumer_name)
-    assert(my_conf.provider_name == provider_name)
-    assert(my_conf.log_dir == log_dir)
-    assert(my_conf.file_write_mode == file_write_mode)
-    assert(my_conf.version == version)
-    assert(my_conf.semver == semver.parse(version))
-    my_conf.allocate_port.assert_called_once_with()
-    assert(my_conf.PORT_NUMBER == Config.PORT_NUMBER)
-    pact_request_handler.ensure_pact_dir.assert_called_once_with(pact_dir)
+    assert(mock_pact.consumer.name == "CONSUMER")
+    assert(mock_pact.provider.name == "PROVIDER")
+    assert(mock_pact.log_dir == "/tmp/a")
+    assert(mock_pact.version == "2.0.0")
+    assert(mock_pact.semver == semver.parse("2.0.0"))
+    mock_pact.allocate_port.assert_called_once_with()
+    assert(mock_pact.BASE_PORT_NUMBER >= 8150)
+    pactman.mock.pact.ensure_pact_dir.assert_called_once_with("/tmp/pact")
     if file_write_mode == "overwrite":
-        my_conf.pact_filename.assert_called_once_with()
-        os.path.exists.assert_called_once_with(file_name)
-        os.remove.assert_called_once_with(file_name)
+        os.path.exists.assert_called_once_with("/tmp/pact/CONSUMER-PROVIDER-pact.json")
+        os.remove.assert_called_once_with("/tmp/pact/CONSUMER-PROVIDER-pact.json")
     else:
-        my_conf.pact_filename.assert_not_called()
+        os.path.exists.assert_not_called()
+        os.remove.assert_not_called()
 
 
-def test_config_pact_filename(config_patched):
-    res = config_patched.pact_filename()
-    assert(res == os.path.join(config_patched.pact_dir, "CONSUMER-PROVIDER-pact.json"))
+def test_config_pact_filename(mock_pact):
+    mock_pact = mock_pact()
+    res = mock_pact.pact_filename()
+    assert(res == os.path.join(mock_pact.pact_dir, "CONSUMER-PROVIDER-pact.json"))
 
 
 def test_ensure_pact_dir_when_exists(monkeypatch):
     monkeypatch.setattr(os.path, 'exists', Mock(side_effect=[True]))
     monkeypatch.setattr(os, 'mkdir', Mock())
-    pact_request_handler.ensure_pact_dir('/tmp/pacts')
+    pactman.mock.pact.ensure_pact_dir('/tmp/pacts')
     os.mkdir.assert_not_called()
 
 
 def test_ensure_pact_dir_when_parent_exists(monkeypatch):
     monkeypatch.setattr(os.path, 'exists', Mock(side_effect=[False, True]))
     monkeypatch.setattr(os, 'mkdir', Mock())
-    pact_request_handler.ensure_pact_dir('/tmp/pacts')
+    pactman.mock.pact.ensure_pact_dir('/tmp/pacts')
     os.mkdir.assert_called_once_with('/tmp/pacts')
 
 
-def test_mock_init(config_patched):
-    my_pact = MockPact(config_patched)
-    assert(my_pact.provider == config_patched.provider_name)
-    assert(my_pact.version == config_patched.version)
-    assert(my_pact.semver == config_patched.semver)
-
-
-def test_pact_request_handler_init(config_patched):
-    my_pact = PactRequestHandler(config_patched)
-    assert(my_pact.config == config_patched)
-
-
-@pytest.mark.parametrize("version", ["2.0.0", "3.0.0"])
-@patch("builtins.open", new_callable=mock_open, read_data="data")
-def test_pact_request_handler_write_pact(monkeypatch, config_patched, version):
-    config_patched.version = version
-    config_patched.semver = semver.parse(version)
-    my_pact = PactRequestHandler(config_patched)
-    os.path.exists.return_value = False
-    expected_pact = {
+def generate_pact(version):
+    return {
         "consumer": {"name": "CONSUMER"},
         "provider": {"name": "PROVIDER"},
-        "interactions": [None],
+        "interactions": [dict(description='spam')],
         "metadata": {
             'pactSpecification': {'version': version}
         }
     }
+
+
+@pytest.mark.parametrize("version", ["2.0.0", "3.0.0"])
+@patch("builtins.open", new_callable=mock_open, read_data="data")
+def test_pact_request_handler_write_pact(mock_open, monkeypatch, mock_pact, version):
+    monkeypatch.setattr(pactman.mock.pact, 'ensure_pact_dir', Mock(return_value=True))
+    mock_pact = mock_pact(version=version)
+    mock_pact.semver = semver.parse(version)
+    my_pact = PactRequestHandler(mock_pact)
+    os.path.exists.return_value = False
     with patch("json.dump", Mock()) as json_mock:
-        my_pact.write_pact(None)
-        open.assert_called_once_with(my_pact.config.pact_filename(), "w")
-        json_mock.assert_called_once_with(expected_pact, open(), indent=2)
+        my_pact.write_pact(dict(description='spam'))
+        mock_open.assert_called_once_with(mock_pact.pact_filename(), "w")
+        json_mock.assert_called_once_with(generate_pact(version), mock_open(), indent=2)
+
+
+@patch("builtins.open", new_callable=mock_open, read_data="data")
+def test_versions_are_consistent(mock_open, monkeypatch, mock_pact):
+    monkeypatch.setattr(pactman.mock.pact, 'ensure_pact_dir', Mock(return_value=True))
+    monkeypatch.setattr(json, 'dump', Mock())
+    monkeypatch.setattr(json, 'load', lambda f: generate_pact('2.0.0'))
+
+    # write the v2 pact
+    pact = mock_pact()
+    pact.semver = semver.parse(pact.version)
+    hdlr = PactRequestHandler(pact)
+    hdlr.write_pact(dict(description='spam'))
+
+    # try to add the v3 pact
+    pact = mock_pact(version='3.0.0')
+    pact.semver = semver.parse(pact.version)
+    hdlr = PactRequestHandler(pact)
+    with pytest.raises(PactVersionConflict):
+        hdlr.write_pact(dict(description='spam'))
+
+
+@patch("builtins.open", new_callable=mock_open, read_data="data")
+def test_immediate_pact_usage(mock_open):
+    pact = Consumer('C').has_pact_with(Provider('P')) \
+        .given("g").upon_receiving("r").with_request("get", "/", query={"foo": ["bar"]}).will_respond_with(200)
+    with pact:
+        requests.get(pact.uri, params={"foo": ["bar"]})
+
+    # force a failure
+    pact = Consumer('C').has_pact_with(Provider('P')) \
+        .given("g").upon_receiving("r").with_request("get", "/", query={"bar": ["foo"]}).will_respond_with(200)
+    with pytest.raises(AssertionError):
+        with pact:
+            requests.get(pact.uri, params={"foo": ["bar"]})
+
+    # make sure mocking still works
+    pact = Consumer('C').has_pact_with(Provider('P')) \
+        .given("g").upon_receiving("r").with_request("get", "/", query={"bar": ["foo"]}).will_respond_with(400)
+    with pact:
+        requests.get(pact.uri, params={"bar": ["foo"]})

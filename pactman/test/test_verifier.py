@@ -3,15 +3,15 @@ import pathlib
 from itertools import chain
 from unittest.mock import Mock
 
-import pytest
 import requests
-import semver
-from restnavigator import Navigator
 
+import pytest
+import semver
 from pactman.verifier.broker_pact import BrokerPact, BrokerPacts, pact_id
 from pactman.verifier.result import Result
-from pactman.verifier.verify import Interaction, RequestVerifier, ResponseVerifier
-
+from pactman.verifier.verify import (Interaction, RequestVerifier,
+                                     ResponseVerifier)
+from restnavigator import Navigator
 
 BASE_DIR = pathlib.Path(__file__).absolute().parents[0]
 

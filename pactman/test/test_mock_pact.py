@@ -1,10 +1,10 @@
 import os
 from unittest import TestCase
-from unittest.mock import patch, call
+from unittest.mock import call, patch
 
 from pactman.mock.consumer import Consumer
-from pactman.mock.provider import Provider
 from pactman.mock.pact import Pact
+from pactman.mock.provider import Provider
 
 
 class PactTestCase(TestCase):
@@ -18,12 +18,12 @@ class PactTestCase(TestCase):
         self.assertEqual(target.host_name, 'localhost')
         self.assertEqual(target.log_dir, os.getcwd())
         self.assertEqual(target.pact_dir, os.getcwd())
-        self.assertEqual(target.port, 1234)
+        self.assertEqual(target.port, Pact.BASE_PORT_NUMBER)
         self.assertIs(target.provider, self.provider)
         self.assertIs(target.ssl, False)
         self.assertIsNone(target.sslcert)
         self.assertIsNone(target.sslkey)
-        self.assertEqual(target.uri, 'http://localhost:1234')
+        self.assertEqual(target.uri, f'http://localhost:{Pact.BASE_PORT_NUMBER}')
         self.assertEqual(target.version, '2.0.0')
         self.assertEqual(len(target._interactions), 0)
 
