@@ -90,14 +90,13 @@ class PactRequestHandler:
         return json.dumps(response['body']).encode(charset)
 
     def write_pact(self, interaction):
-        filename = self.pact.pact_json_filename
         if self.pact.semver["major"] >= 3:
             provider_state_key = 'providerStates'
         else:
             provider_state_key = 'providerState'
 
-        if os.path.exists(filename):
-            with open(filename) as f:
+        if os.path.exists(self.pact.pact_json_filename):
+            with open(self.pact.pact_json_filename) as f:
                 pact = json.load(f)
             existing_version = pact['metadata']['pactSpecification']['version']
             if existing_version != self.pact.version:
@@ -117,5 +116,5 @@ class PactRequestHandler:
         else:
             pact = self.pact.construct_pact(interaction)
 
-        with open(filename, 'w') as f:
+        with open(self.pact.pact_json_filename, 'w') as f:
             json.dump(pact, f, indent=2)
