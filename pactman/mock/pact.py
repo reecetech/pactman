@@ -109,6 +109,8 @@ class Pact(object):
         self._interactions = []
         self._mock_handler = None
 
+        self.check_existing_file()
+
     @property
     def uri(self):
         return '{scheme}://{host_name}:{port}'.format(host_name=self.host_name, port=self.port, scheme=self.scheme)
@@ -120,14 +122,16 @@ class Pact(object):
         cls.BASE_PORT_NUMBER += 5
         return cls.BASE_PORT_NUMBER
 
-    def pact_filename(self):
+    def check_existing_file(self):
         # ensure destination directory exists
         ensure_pact_dir(self.pact_dir)
-        filename = os.path.join(self.pact_dir, f'{self.consumer.name}-{self.provider.name}-pact.json')
         if self.file_write_mode == 'overwrite':
-            if os.path.exists(filename):
-                os.remove(filename)
-        return filename
+            if os.path.exists(self.pact_json_filename):
+                os.remove(self.pact_json_filename)
+
+    @property
+    def pact_json_filename(self):
+        return os.path.join(self.pact_dir, f'{self.consumer.name}-{self.provider.name}-pact.json')
 
     def given(self, provider_state, **params):
         """
@@ -219,6 +223,7 @@ class Pact(object):
 
     def stop_mocking(self):
         self._mock_handler.terminate()
+        self._mock_handler = None
 
     # legacy pact-python API support
     start_service = start_mocking
@@ -247,7 +252,7 @@ class Pact(object):
         try:
             self._mock_handler.verify()
         finally:
-            # clear the interactions once we've attempted to verify, allowing re-use of the server
+            # clear the interactions once we've attempted to verify, allowing re-use of the mock
             self._interactions[:] = []
 
     def with_request(self, method, path, body=None, headers=None, query=None):
@@ -303,7 +308,6 @@ class Pact(object):
         if not self.use_mocking_server and not self._mock_handler:
             self._auto_mocked = True
             self.start_mocking()
-
         self.setup()
 
     def __exit__(self, exc_type, exc_val, exc_tb):

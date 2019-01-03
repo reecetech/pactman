@@ -1,5 +1,7 @@
 import json
 import os
+import tempfile
+
 import requests
 from unittest.mock import Mock, mock_open, patch
 
@@ -8,7 +10,7 @@ import pytest
 import semver
 from pactman.mock.consumer import Consumer
 from pactman.mock.pact import Pact
-from pactman.mock.pact_request_handler import PactRequestHandler, PactVersionConflict
+from pactman.mock.pact_request_handler import PactRequestHandler, PactVersionConflict, PactInteractionMismatch
 from pactman.mock.provider import Provider
 
 
@@ -112,22 +114,49 @@ def test_versions_are_consistent(mock_open, monkeypatch, mock_pact):
         hdlr.write_pact(dict(description='spam'))
 
 
-@patch("builtins.open", new_callable=mock_open, read_data="data")
-def test_immediate_pact_usage(mock_open):
-    pact = Consumer('C').has_pact_with(Provider('P')) \
-        .given("g").upon_receiving("r").with_request("get", "/", query={"foo": ["bar"]}).will_respond_with(200)
-    with pact:
-        requests.get(pact.uri, params={"foo": ["bar"]})
+def test_pacts_written():
+    with tempfile.TemporaryDirectory() as d:
+        pact = Consumer('C').has_pact_with(Provider('P'), pact_dir=d)
+        with pact.given("g").upon_receiving("r").with_request("get", "/foo").will_respond_with(200):
+            requests.get(pact.uri + '/foo')
 
-    # force a failure
-    pact = Consumer('C').has_pact_with(Provider('P')) \
-        .given("g").upon_receiving("r").with_request("get", "/", query={"bar": ["foo"]}).will_respond_with(200)
-    with pytest.raises(AssertionError):
+        # force a failure
+        with pytest.raises(AssertionError):
+            with pact.given("g").upon_receiving("r2").with_request("get", "/bar").will_respond_with(200):
+                requests.get(pact.uri + '/foo')
+
+        # make sure mocking still works
+        with pact.given("g").upon_receiving("r2").with_request("get", "/bar").will_respond_with(200):
+            requests.get(pact.uri + '/bar')
+
+        # ensure two pacts written
+        with open(pact.pact_json_filename) as f:
+            content = json.load(f)
+            assert len(content['interactions']) == 2
+
+
+def test_detect_mismatch_request_manual_mode():
+    with tempfile.TemporaryDirectory() as d:
+        pact = Consumer('C').has_pact_with(Provider('P'), pact_dir=d, file_write_mode="merge") \
+            .given("g").upon_receiving("r").with_request("get", "/foo").will_respond_with(200)
         with pact:
-            requests.get(pact.uri, params={"foo": ["bar"]})
+            requests.get(pact.uri + '/foo')
 
-    # make sure mocking still works
-    pact = Consumer('C').has_pact_with(Provider('P')) \
-        .given("g").upon_receiving("r").with_request("get", "/", query={"bar": ["foo"]}).will_respond_with(400)
-    with pact:
-        requests.get(pact.uri, params={"bar": ["foo"]})
+        # force a failure by specifying the same given/providerState but different request
+        pact = Consumer('C').has_pact_with(Provider('P'), pact_dir=d, file_write_mode="merge") \
+            .given("g").upon_receiving("r").with_request("get", "/bar").will_respond_with(200)
+        with pytest.raises(PactInteractionMismatch):
+            with pact:
+                requests.get(pact.uri + '/bar')
+
+
+def test_detect_mismatch_request_retained_relationship():
+    with tempfile.TemporaryDirectory() as d:
+        pact = Consumer('C').has_pact_with(Provider('P'), pact_dir=d)
+        with pact.given("g").upon_receiving("r").with_request("get", "/foo").will_respond_with(200):
+            requests.get(pact.uri + '/foo')
+
+        # force a failure by specifying the same given/providerState but different request
+        with pytest.raises(PactInteractionMismatch):
+            with pact.given("g").upon_receiving("r").with_request("get", "/bar").will_respond_with(200):
+                requests.get(pact.uri + '/bar')

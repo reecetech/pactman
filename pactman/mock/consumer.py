@@ -37,7 +37,8 @@ class Consumer(object):
 
     def has_pact_with(self, provider, host_name='localhost', port=None,
                       log_dir=None, ssl=False, sslcert=None, sslkey=None,
-                      pact_dir=None, version='2.0.0', use_mocking_server=USE_MOCKING_SERVER):
+                      pact_dir=None, version='2.0.0', file_write_mode='overwrite',
+                      use_mocking_server=USE_MOCKING_SERVER):
         """
         Create a contract between the `provider` and this consumer.
 
@@ -80,14 +81,21 @@ class Consumer(object):
         :type pact_dir: str
         :param version: The Pact Specification version to use, defaults to
             '2.0.0'.
-        :type version: str
+        :param file_write_mode: `overwrite` or `merge`. Use `merge` when
+            running multiple mock service instances in parallel for the same
+            consumer/provider pair. Ensure the pact file is deleted before
+            running tests when using this option so that interactions deleted
+            from the code are not maintained in the file. Defaults to
+            `overwrite`.
+        :type file_write_mode: str
         :param use_mocking_server: If True the mocking will be done using a
             HTTP server rather than patching urllib3 connections. Can be set
             by the environment variable PACT_USE_MOCKING_SERVER which has
             values "no" (default) or "yes".
         :type use_mocking_server: bool
         :return: A Pact object which you can use to define the specific
-            interactions your code will have with the provider.
+            interactions your c        :type version: str
+ode will have with the provider.
         :rtype: pact.Pact
         """
         if not isinstance(provider, (Provider,)):
@@ -105,5 +113,6 @@ class Consumer(object):
             sslkey=sslkey,
             pact_dir=pact_dir,
             version=version,
+            file_write_mode=file_write_mode,
             use_mocking_server=use_mocking_server,
         )

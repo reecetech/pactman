@@ -30,7 +30,11 @@ class RecordResult(Result):
         return not message
 
 
-class PactVersionConflict(ValueError):
+class PactVersionConflict(AssertionError):
+    pass
+
+
+class PactInteractionMismatch(AssertionError):
     pass
 
 
@@ -86,30 +90,36 @@ class PactRequestHandler:
         return json.dumps(response['body']).encode(charset)
 
     def write_pact(self, interaction):
-        filename = self.pact.pact_filename()
+        filename = self.pact.pact_json_filename
         if self.pact.semver["major"] >= 3:
             provider_state_key = 'providerStates'
         else:
             provider_state_key = 'providerState'
 
+        print(filename, os.path.exists(filename))
         if os.path.exists(filename):
             with open(filename) as f:
                 pact = json.load(f)
+            print('hi', pact)
             existing_version = pact['metadata']['pactSpecification']['version']
             if existing_version != self.pact.version:
                 raise PactVersionConflict(f'Existing pact ("{pact["interactions"][0]["description"]}") specifies '
                                           f'version {existing_version} but new pact ("interaction["description"]") '
                                           f'specifies version {self.pact.version}')
             for existing in pact['interactions']:
+                print('hi', existing, interaction)
                 if (existing['description'] == interaction['description']
                         and existing.get(provider_state_key) == interaction.get(provider_state_key)):
                     # already got one of these...
-                    assert existing == interaction, 'Existing "{existing["description"]}" pact given ' \
-                        '{existing.get(provider_state_key)!r} exists with different request/response'.format(**locals())
+                    if existing != interaction:
+                        raise PactInteractionMismatch(
+                            f'Existing "{existing["description"]}" pact given {existing.get(provider_state_key)!r} '
+                            'exists with different request/response')
                     return
             pact['interactions'].append(interaction)
         else:
             pact = self.pact.construct_pact(interaction)
 
+        print('writing', filename, pact)
         with open(filename, 'w') as f:
             json.dump(pact, f, indent=2)

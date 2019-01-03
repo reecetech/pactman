@@ -181,6 +181,10 @@ from pactman import Consumer, Provider
 pact = Consumer('Consumer').has_pact_with(Provider('Provider'), version='3.0.0')
 ```
 
+`file_write_mode` defaults to `"overwrite"` and should be that or `"merge"`. Overwrite ensures
+that any existing pact file will be removed when `has_pact_with()` is invoked. Merge will retain
+the pact file and add new pacts to that file. See [writing multiple pacts](#writing-multiple-pacts)
+
 `use_mocking_server` defaults to `False` and controls the mocking method used by `pactman`. The default is to
 patch `urllib3`, which is the library underpinning `requests` and is also used by some other projects. If you
 are using a different library to make your HTTP requests which does not use `urllib3` underneath then you will need
@@ -200,6 +204,20 @@ atexit.register(pact.stop_mocking)
 ``````
 
 You'd then use `pact` to declare pacts between those participants.
+
+### Writing multiple pacts
+
+During a test run you're likely to need to write multiple pact interactions for a consumer/provider
+relationship. `pactman` will manage the pact file using some simple rules:
+
+- When `has_pact_with()` is invoked it will by default remove any existing pact JSON file for the
+  stated consumer & provider.
+- You may invoke `Consumer('Consumer').has_pact_with(Provider('Provider'))` once at the start of
+  your tests. This could be done as a pytest module or session fixture, or through some other
+  mechanism and store it in a variable. By convention this is called `pact` in all of our examples.
+- If that is not suitable, you may manually indicate to `has_pact_with()` that it should either
+  retain (`file_write_mode="merge"`) or remove (`file_write_mode="overwrite"`) the existing
+  pact file.
 
 ### Some words about given()
 You use `given()` to indicate to the provider that they should have some state in order to
@@ -391,6 +409,12 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+2.10.0
+
+- Allow `has_pact_with()` to accept `file_write_mode`
+- Fix bug introduced in 2.9.0 where generating multiple pacts would result in a single pact
+  being recorded
 
 2.9.0
 
