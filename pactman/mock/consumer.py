@@ -81,6 +81,7 @@ class Consumer(object):
         :type pact_dir: str
         :param version: The Pact Specification version to use, defaults to
             '2.0.0'.
+        :type version: str
         :param file_write_mode: `overwrite` or `merge`. Use `merge` when
             running multiple mock service instances in parallel for the same
             consumer/provider pair. Ensure the pact file is deleted before
