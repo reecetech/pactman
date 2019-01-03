@@ -96,18 +96,15 @@ class PactRequestHandler:
         else:
             provider_state_key = 'providerState'
 
-        print(filename, os.path.exists(filename))
         if os.path.exists(filename):
             with open(filename) as f:
                 pact = json.load(f)
-            print('hi', pact)
             existing_version = pact['metadata']['pactSpecification']['version']
             if existing_version != self.pact.version:
                 raise PactVersionConflict(f'Existing pact ("{pact["interactions"][0]["description"]}") specifies '
                                           f'version {existing_version} but new pact ("interaction["description"]") '
                                           f'specifies version {self.pact.version}')
             for existing in pact['interactions']:
-                print('hi', existing, interaction)
                 if (existing['description'] == interaction['description']
                         and existing.get(provider_state_key) == interaction.get(provider_state_key)):
                     # already got one of these...
@@ -120,6 +117,5 @@ class PactRequestHandler:
         else:
             pact = self.pact.construct_pact(interaction)
 
-        print('writing', filename, pact)
         with open(filename, 'w') as f:
             json.dump(pact, f, indent=2)
