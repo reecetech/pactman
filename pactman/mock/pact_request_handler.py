@@ -30,7 +30,11 @@ class RecordResult(Result):
         return not message
 
 
-class PactVersionConflict(ValueError):
+class PactVersionConflict(AssertionError):
+    pass
+
+
+class PactInteractionMismatch(AssertionError):
     pass
 
 
@@ -86,14 +90,13 @@ class PactRequestHandler:
         return json.dumps(response['body']).encode(charset)
 
     def write_pact(self, interaction):
-        filename = self.pact.pact_filename()
         if self.pact.semver["major"] >= 3:
             provider_state_key = 'providerStates'
         else:
             provider_state_key = 'providerState'
 
-        if os.path.exists(filename):
-            with open(filename) as f:
+        if os.path.exists(self.pact.pact_json_filename):
+            with open(self.pact.pact_json_filename) as f:
                 pact = json.load(f)
             existing_version = pact['metadata']['pactSpecification']['version']
             if existing_version != self.pact.version:
@@ -104,12 +107,14 @@ class PactRequestHandler:
                 if (existing['description'] == interaction['description']
                         and existing.get(provider_state_key) == interaction.get(provider_state_key)):
                     # already got one of these...
-                    assert existing == interaction, 'Existing "{existing["description"]}" pact given ' \
-                        '{existing.get(provider_state_key)!r} exists with different request/response'.format(**locals())
+                    if existing != interaction:
+                        raise PactInteractionMismatch(
+                            f'Existing "{existing["description"]}" pact given {existing.get(provider_state_key)!r} '
+                            'exists with different request/response')
                     return
             pact['interactions'].append(interaction)
         else:
             pact = self.pact.construct_pact(interaction)
 
-        with open(filename, 'w') as f:
+        with open(self.pact.pact_json_filename, 'w') as f:
             json.dump(pact, f, indent=2)
