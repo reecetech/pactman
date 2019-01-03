@@ -208,7 +208,7 @@ You'd then use `pact` to declare pacts between those participants.
 ### Writing multiple pacts
 
 During a test run you're likely to need to write multiple pact interactions for a consumer/provider
-relationship. `pactman` will manage the pact file using some simple rules:
+relationship. `pactman` will manage the pact file as follows:
 
 - When `has_pact_with()` is invoked it will by default remove any existing pact JSON file for the
   stated consumer & provider.
