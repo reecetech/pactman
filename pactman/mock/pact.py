@@ -308,6 +308,7 @@ class Pact(object):
         if not self.use_mocking_server and not self._mock_handler:
             self._auto_mocked = True
             self.start_mocking()
+
         self.setup()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
