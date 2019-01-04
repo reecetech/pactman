@@ -332,7 +332,7 @@ def get_matching_rules_v2(input, path):
     raise ValueError('Unknown type: %s' % type(input))
 
 
-class matching_rule_v3(dict):
+class MatchingRuleV3(dict):
     def generate(self, input, path):
         if self.handle_basic_types(input, path):
             return
@@ -387,6 +387,6 @@ def get_matching_rules_v3(input, path):
     This is done recursively, adding new paths as new matching rules
     are encountered.
     '''
-    rules = matching_rule_v3()
+    rules = MatchingRuleV3()
     rules.generate(input, path)
     return rules
