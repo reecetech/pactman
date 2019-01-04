@@ -410,6 +410,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.11.0
+
+- Ensure query param values are lists
+
 2.10.0
 
 - Allow `has_pact_with()` to accept `file_write_mode`

@@ -1,4 +1,6 @@
 from pactman import Consumer, EachLike, Provider
+from pactman.mock.request import Request
+from pactman.mock.response import Response
 
 
 def test_eachlike():
@@ -27,3 +29,13 @@ def test_eachlike():
         ],
         'metadata': dict(pactSpecification=dict(version='2.0.0'))
     }
+
+
+def test_falsey_request_body():
+    target = Request('GET', '/path', body=[])
+    assert target.json('2.0.0') == {'method': 'GET', 'path': '/path', 'body': []}
+
+
+def test_falsey_response_body():
+    target = Response(200, body=[])
+    assert target.json('2.0.0') == {'status': 200, 'body': []}
