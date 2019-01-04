@@ -1,4 +1,5 @@
 import os
+import tempfile
 from unittest import TestCase
 from unittest.mock import call, patch
 
@@ -28,16 +29,17 @@ class PactTestCase(TestCase):
         self.assertEqual(len(target._interactions), 0)
 
     def test_init_custom_mock_service(self):
-        target = Pact(
-            self.consumer, self.provider, host_name='192.168.1.1', port=8000,
-            log_dir='/logs', ssl=True, sslcert='/ssl.cert', sslkey='/ssl.pem',
-            pact_dir='/pacts', version='3.0.0', file_write_mode='merge',
-            use_mocking_server=False)
+        with tempfile.TemporaryDirectory() as d:
+            target = Pact(
+                self.consumer, self.provider, host_name='192.168.1.1', port=8000,
+                log_dir='/logs', ssl=True, sslcert='/ssl.cert', sslkey='/ssl.pem',
+                pact_dir=d, version='3.0.0', file_write_mode='merge',
+                use_mocking_server=False)
 
         self.assertIs(target.consumer, self.consumer)
         self.assertEqual(target.host_name, '192.168.1.1')
         self.assertEqual(target.log_dir, '/logs')
-        self.assertEqual(target.pact_dir, '/pacts')
+        self.assertEqual(target.pact_dir, d)
         self.assertEqual(target.port, 8000)
         self.assertIs(target.provider, self.provider)
         self.assertIs(target.ssl, True)
@@ -73,14 +75,14 @@ class PactTestCase(TestCase):
                          {'status': 200, 'body': 'success'})
 
     def test_definition_all_options(self):
-        target = Pact(self.consumer, self.provider)
+        target = Pact(self.consumer, self.provider, version='2.0.0')
         (target
          .given('I am creating a new pact using the Pact class')
          .upon_receiving('a specific request to the server')
          .with_request('GET', '/path',
                        body={'key': 'value'},
                        headers={'Accept': 'application/json'},
-                       query={'search': 'test'})
+                       query='search=test')
          .will_respond_with(
              200,
              body='success', headers={'Content-Type': 'application/json'}))
@@ -98,13 +100,13 @@ class PactTestCase(TestCase):
             'method': 'GET',
             'body': {'key': 'value'},
             'headers': {'Accept': 'application/json'},
-            'query': {'search': 'test'}})
+            'query': 'search=test'})
         self.assertEqual(target._interactions[0]['response'], {
             'status': 200,
             'body': 'success',
             'headers': {'Content-Type': 'application/json'}})
 
-    def test_definition_v3(self):
+    def test_definition_all_options_v3(self):
         target = Pact(self.consumer, self.provider, version='3.0.0')
         (target
          .given([{'name': 'I am creating a new pact using the Pact class', 'params': {}}])
@@ -112,7 +114,7 @@ class PactTestCase(TestCase):
          .with_request('GET', '/path',
                        body={'key': 'value'},
                        headers={'Accept': 'application/json'},
-                       query={'search': 'test'})
+                       query={'search': ['test']})
          .will_respond_with(
              200,
              body='success', headers={'Content-Type': 'application/json'}))
@@ -130,7 +132,7 @@ class PactTestCase(TestCase):
             'method': 'GET',
             'body': {'key': 'value'},
             'headers': {'Accept': 'application/json'},
-            'query': {'search': 'test'}})
+            'query': {'search': ['test']}})
         self.assertEqual(target._interactions[0]['response'], {
             'status': 200,
             'body': 'success',

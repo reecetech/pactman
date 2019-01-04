@@ -272,9 +272,14 @@ class Pact(object):
         :param query: The query options the client is expected to send. Can be
             a dict of keys and values, or a URL encoded string.
             Defaults to None.
-        :type query: dict, basestring, or None
+        :type query: dict, str, or None
         :rtype: Pact
         """
+        # ensure all query values are lists of values
+        if isinstance(query, dict):
+            for k, v in query.items():
+                if isinstance(v, str):
+                    query[k] = [v]
         self._interactions[0]['request'] = Request(
             method, path, body=body, headers=headers, query=query).json(self.version)
         return self

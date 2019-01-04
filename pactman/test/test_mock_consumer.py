@@ -23,7 +23,7 @@ class ConsumerTestCase(TestCase):
         self.assertIs(result, self.mock_service.return_value)
         self.mock_service.assert_called_once_with(
             consumer=self.consumer, provider=self.provider,
-            host_name='localhost', port=None,
+            host_name='localhost', port=None, file_write_mode='overwrite',
             log_dir=None, ssl=False, sslcert=None, sslkey=None,
             pact_dir=None, version='2.0.0', use_mocking_server=False)
 
@@ -36,7 +36,7 @@ class ConsumerTestCase(TestCase):
         self.assertIs(result, self.mock_service.return_value)
         self.mock_service.assert_called_once_with(
             consumer=self.consumer, provider=self.provider,
-            host_name='example.com', port=1111,
+            host_name='example.com', port=1111, file_write_mode='overwrite',
             log_dir='/logs', ssl=True, sslcert='/ssl.cert', sslkey='ssl.pem',
             pact_dir='/pacts', version='3.0.0', use_mocking_server=False)
 

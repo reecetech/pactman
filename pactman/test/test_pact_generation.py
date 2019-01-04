@@ -31,7 +31,7 @@ def mock_pact(monkeypatch):
 def test_pact_init(monkeypatch, file_write_mode, mock_pact):
     monkeypatch.setattr(pactman.mock.pact, 'ensure_pact_dir', Mock(return_value=True))
     mock_pact = mock_pact(file_write_mode)
-    mock_pact.pact_filename()
+    filename = mock_pact.pact_json_filename
 
     assert(mock_pact.consumer.name == "CONSUMER")
     assert(mock_pact.provider.name == "PROVIDER")
@@ -42,8 +42,8 @@ def test_pact_init(monkeypatch, file_write_mode, mock_pact):
     assert(mock_pact.BASE_PORT_NUMBER >= 8150)
     pactman.mock.pact.ensure_pact_dir.assert_called_once_with("/tmp/pact")
     if file_write_mode == "overwrite":
-        os.path.exists.assert_called_once_with("/tmp/pact/CONSUMER-PROVIDER-pact.json")
-        os.remove.assert_called_once_with("/tmp/pact/CONSUMER-PROVIDER-pact.json")
+        os.path.exists.assert_called_once_with(filename)
+        os.remove.assert_called_once_with(filename)
     else:
         os.path.exists.assert_not_called()
         os.remove.assert_not_called()
@@ -51,8 +51,7 @@ def test_pact_init(monkeypatch, file_write_mode, mock_pact):
 
 def test_config_pact_filename(mock_pact):
     mock_pact = mock_pact()
-    res = mock_pact.pact_filename()
-    assert(res == os.path.join(mock_pact.pact_dir, "CONSUMER-PROVIDER-pact.json"))
+    assert(mock_pact.pact_json_filename == os.path.join(mock_pact.pact_dir, "CONSUMER-PROVIDER-pact.json"))
 
 
 def test_ensure_pact_dir_when_exists(monkeypatch):
@@ -90,7 +89,7 @@ def test_pact_request_handler_write_pact(mock_open, monkeypatch, mock_pact, vers
     os.path.exists.return_value = False
     with patch("json.dump", Mock()) as json_mock:
         my_pact.write_pact(dict(description='spam'))
-        mock_open.assert_called_once_with(mock_pact.pact_filename(), "w")
+        mock_open.assert_called_once_with(mock_pact.pact_json_filename, "w")
         json_mock.assert_called_once_with(generate_pact(version), mock_open(), indent=2)
 
 
