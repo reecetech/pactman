@@ -239,9 +239,10 @@ states using the `and_given()` call, which may be invoked many times if necessar
 `given()` have the same calling convention: a provider state name and any optional parameters.
 
 ## Expecting Variable Content
-The above test works great if that user information is always static, but what happens if
-the user has a last updated field that is set to the current time every time the object is
-modified? To handle variable data and make your tests more robust, there are 3 helpful matchers:
+The default validity testing of equal values works great if that user information is always
+static, but what happens if the user has a last updated field that is set to the current time
+every time the object is modified? To handle variable data and make your tests more robust,
+there are several helpful matchers:
 
 ### Term(matcher, sample_data)
 Asserts the value should match the given regular expression. You could use this
@@ -343,6 +344,20 @@ EachLike({
 
 For more information see [Matching](https://docs.pact.io/documentation/matching.html)
 
+### Enforcing equality matching
+
+If you have a sub-term of a `Like` which needs to match an exact value like the default
+validity test then you can use `Equals`, for example::
+
+```python
+from pactman import Equals, Like
+Like({
+    'id': 123, # match integer, value varies
+    'username': Equals('alex')  # username must always be "alex"
+})
+```
+
+
 ### Body payload rules
 The `body` payload is assumed to be JSON data. In the absence of a `Content-Type` header
 we assume `Content-Type: application/json; charset=UTF-8` (JSON text is Unicode and the
@@ -409,6 +424,10 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+2.12.0
+
+- Add `Equals` matcher
 
 2.11.0
 

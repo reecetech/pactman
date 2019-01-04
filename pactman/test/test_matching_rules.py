@@ -118,12 +118,12 @@ def test_number_fail():
 
 
 def test_equality():
-    MatchEquality('$', dict(match='equality', value='spam')).apply('spam', None, ['a'])
+    MatchEquality('$', dict(match='equality')).apply('spam', 'spam', ['a'])
 
 
 def test_equality_fail():
     with pytest.raises(RuleFailed):
-        MatchEquality('$', dict(match='equality', value='spam')).apply('ham', None, ['a'])
+        MatchEquality('$', dict(match='equality')).apply('ham', 'spam', ['a'])
 
 
 def test_include():
