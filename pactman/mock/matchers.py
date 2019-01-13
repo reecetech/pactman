@@ -6,7 +6,7 @@ class Matcher(object):
 
     def ruby_protocol(self):  # pragma: no cover
         """
-        Get the value that the mock should use for this Matcher.
+        Serialise this Matcher for the Ruby mocking server.
 
         :rtype: any
         """
@@ -29,8 +29,7 @@ class EachLike(Matcher):
     ...  .with_request('get', '/comment', query={'limit': 2})
     ...  .will_respond_with(200, body={
     ...    'comments': EachLike(
-    ...        {'name': SomethingLike('bob'),
-    ...         'text': SomethingLike('Hello!')},
+    ...        {'name': Like('bob'), 'text': Like('Hello!')},
     ...        minimum=2)
     ...  }))
 
@@ -56,7 +55,7 @@ class EachLike(Matcher):
 
     def ruby_protocol(self):
         """
-        Generate the value the mock will return.
+        Serialise this EachLike for the Ruby mocking server.
 
         :return: A dict containing the information about the contents of the
             list and the provided minimum number of items for that list.
@@ -95,7 +94,7 @@ class Like(Matcher):
 
     def __init__(self, matcher):
         """
-        Create a new SomethingLike.
+        Create a new Like.
 
         :param matcher: The object that should be expected. The mock
             will return this value. When verified against the provider, the
@@ -114,10 +113,10 @@ class Like(Matcher):
 
     def ruby_protocol(self):
         """
-        Return the value that should be used in the request/response.
+        Serialise this Like for the Ruby mocking server.
 
         :return: A dict containing the information about what the contents of
-            the response should be.
+            the request/response should be.
         :rtype: dict
         """
         return {
@@ -169,10 +168,10 @@ class Term(Matcher):
 
     def ruby_protocol(self):
         """
-        Return the value that should be used in the request/response.
+        Serialise this Term for the Ruby mocking server.
 
         :return: A dict containing the information about what the contents of
-            the response should be, and what should match for the requests.
+            the request/response should be, and what should match for the requests.
         :rtype: dict
         """
         return {
