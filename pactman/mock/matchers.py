@@ -350,7 +350,7 @@ class MatchingRuleV3(dict):
                 self.generate(v, path + '.' + k)
             return True
         if isinstance(input, list):
-            for i, v in enumerate(input):
+            for v in input:
                 self.generate(v, path + '[*]')
             return True
         return False
