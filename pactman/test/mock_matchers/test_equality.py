@@ -21,8 +21,15 @@ def test_basic_type():
     assert Equals(123).generate_matching_rule_v3() == {'matchers': [{'match': 'equality'}]}
 
 
+def test_v2_not_allowed():
+    with pytest.raises(Equals.NotAllowed):
+        Consumer('C').has_pact_with(Provider('P'), version='2.0.0') \
+            .given("g").upon_receiving("r").with_request("post", "/foo", body=Equals("bee")) \
+            .will_respond_with(200)
+
+
 def test_mock_usage_pass_validation():
-    pact = Consumer('C').has_pact_with(Provider('P')) \
+    pact = Consumer('C').has_pact_with(Provider('P'), version='3.0.0') \
         .given("g").upon_receiving("r").with_request("post", "/foo", body=Like({"a": "spam", "b": Equals("bee")})) \
         .will_respond_with(200)
 
@@ -31,9 +38,9 @@ def test_mock_usage_pass_validation():
 
 
 def test_mock_usage_fail_validation():
-    pact = Consumer('C').has_pact_with(Provider('P')) \
+    pact = Consumer('C').has_pact_with(Provider('P'), version='3.0.0') \
         .given("g").upon_receiving("r").with_request("post", "/foo", body=Like({"a": "spam", "b": Equals("bee")})) \
         .will_respond_with(200)
 
-    with pact:
+    with pytest.raises(AssertionError), pact:
         requests.post(pact.uri + '/foo', json={"a": "ham", "b": "wasp"})

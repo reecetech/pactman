@@ -209,6 +209,9 @@ class Equals(Matcher):
     will be returned by the mock, instead of a randomly generated value.
     """
 
+    class NotAllowed(TypeError):
+        pass
+
     def __init__(self, matcher):
         """
         Create a new Equals.
@@ -324,9 +327,7 @@ def get_matching_rules_v2(input, path):
     if isinstance(input, TERM_CLASSES):
         return {path: {'regex': input.matcher}}
     if isinstance(input, Equals):
-        rules = {path: {'match': 'equals'}}
-        rules.update(get_matching_rules_v2(input.matcher, path))
-        return rules
+        raise Equals.NotAllowed(f'Equals() cannot be used in pact version 2')
 
     raise ValueError('Unknown type: %s' % type(input))
 

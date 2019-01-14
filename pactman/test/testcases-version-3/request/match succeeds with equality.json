@@ -1,6 +1,6 @@
 {
-  "match": false,
-  "comment": "Request match with equality",
+  "match": true,
+  "comment": "Request match with equality and pass",
   "expected" : {
     "method": "POST",
     "path": "/",
@@ -38,7 +38,7 @@
     "headers": {"Content-Type": "application/json"},
     "body": {
       "alligator":{
-        "feet": 5,
+        "feet": 4,
         "name": "Alex"
       }
     }

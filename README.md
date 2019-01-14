@@ -122,21 +122,21 @@ If you want more control over when the mock is configured and the interactions v
 use the `setup` and `verify` methods, respectively:
 
 ```python
-    Consumer('Consumer').has_pact_with(Provider('Provider')).given(
-        'UserA exists and is not an administrator'
-    ).upon_receiving(
-        'a request for UserA'
-    ).with_request(
-        'GET', '/users/UserA'
-    ) .will_respond_with(200, body=expected)
+Consumer('Consumer').has_pact_with(Provider('Provider')).given(
+    'UserA exists and is not an administrator'
+).upon_receiving(
+    'a request for UserA'
+).with_request(
+    'GET', '/users/UserA'
+) .will_respond_with(200, body=expected)
 
-    pact.setup()
-    try:
-        # Some additional steps before running the code under test
-        result = get_user('UserA')
-        # Some additional steps before verifying all interactions have occurred
-    finally:
-        pact.verify()
+pact.setup()
+try:
+    # Some additional steps before running the code under test
+    result = get_user('UserA')
+    # Some additional steps before verifying all interactions have occurred
+finally:
+    pact.verify()
 ```
 
 ### Requests
@@ -344,7 +344,9 @@ EachLike({
 
 For more information see [Matching](https://docs.pact.io/documentation/matching.html)
 
-### Enforcing equality matching
+### Enforcing equality matching with Equals
+
+*Available in version 3.0.0+ pacts*
 
 If you have a sub-term of a `Like` which needs to match an exact value like the default
 validity test then you can use `Equals`, for example::
