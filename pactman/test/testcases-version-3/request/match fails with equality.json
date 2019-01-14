@@ -1,6 +1,6 @@
 {
   "match": false,
-  "comment": "Request match with include and fail",
+  "comment": "Request match with equality and fail",
   "expected" : {
     "method": "POST",
     "path": "/",
@@ -15,11 +15,10 @@
             }
           ]
         },
-        "$.alligator.name": {
+        "$.alligator.feet": {
           "matchers": [
             {
-              "match": "include",
-              "value": "alex"
+              "match": "equality"
             }
           ]
         }
@@ -40,7 +39,7 @@
     "body": {
       "alligator":{
         "feet": 5,
-        "name": "spam"
+        "name": "Alex"
       }
     }
   }
