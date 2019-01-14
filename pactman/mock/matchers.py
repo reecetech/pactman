@@ -230,6 +230,50 @@ class Equals(Matcher):
         return {'matchers': [{'match': 'equality'}]}
 
 
+class Includes(Matcher):
+    """
+    Expect the string value to contain the matcher.
+
+    Example:
+
+    >>> from pactman import Consumer, Provider
+    >>> pact = Consumer('consumer').has_pact_with(Provider('provider'))
+    >>> (pact
+    ...  .given('there is a random number generator')
+    ...  .upon_receiving('a request for a random number')
+    ...  .with_request('get', '/generate-number')
+    ...  .will_respond_with(200, body={
+    ...    'content': Includes('spam', 'Some example spamming content')
+    ...  }))
+
+    Would expect the response body to be a JSON object, containing the key
+    `content`, which be a string containing `'spam'`.
+    When the consumer runs this contract, the value `'Some example spamming content'`
+    will be returned by the mock.
+    """
+
+    class NotAllowed(TypeError):
+        pass
+
+    def __init__(self, matcher, generate):
+        """
+        Create a new Includes.
+
+        :param matcher: The substring that should be expected. When verified against the
+            provider, the value will be asserted.
+        :type matcher: string
+        :param generate: The mock will return this value.
+        :type generate: string
+        """
+        assert isinstance(matcher, str), f"matcher must be a string, got '{type(matcher)}'"
+
+        self.matcher = matcher
+        self.generate = generate
+
+    def generate_matching_rule_v3(self):
+        return {'matchers': [{'match': 'include', 'value': self.matcher}]}
+
+
 def generate_ruby_protocol(term):
     """
     Parse the provided term into the JSON for the Ruby mock server.
@@ -267,7 +311,9 @@ except ImportError:
     TERM_CLASSES = (Term,)
 
 
-def get_generated_values(input):
+# this function is long and complex (C901) because it has to handle the pact-python
+# types :-(
+def get_generated_values(input):  # noqa: C901
     """
     Resolve (nested) Matchers to their generated values for assertion.
 
@@ -292,11 +338,15 @@ def get_generated_values(input):
         return input.generate
     elif isinstance(input, Equals):
         return get_generated_values(input.matcher)
+    elif isinstance(input, Includes):
+        return input.generate
     else:
         raise ValueError('Unknown type: %s' % type(input))
 
 
-def get_matching_rules_v2(input, path):
+# this function is long and complex (C901) because it has to handle the pact-python
+# types :-(
+def get_matching_rules_v2(input, path):  # noqa: C901
     '''Turn a matcher into the matchingRules structure for pact JSON.
 
     This is done recursively, adding new paths as new matching rules
@@ -328,6 +378,8 @@ def get_matching_rules_v2(input, path):
         return {path: {'regex': input.matcher}}
     if isinstance(input, Equals):
         raise Equals.NotAllowed(f'Equals() cannot be used in pact version 2')
+    if isinstance(input, Includes):
+        raise Includes.NotAllowed(f'Includes() cannot be used in pact version 2')
 
     raise ValueError('Unknown type: %s' % type(input))
 

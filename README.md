@@ -244,6 +244,37 @@ static, but what happens if the user has a last updated field that is set to the
 every time the object is modified? To handle variable data and make your tests more robust,
 there are several helpful matchers:
 
+### Includes(matcher, sample_data)
+
+*Available in version 3.0.0+ pacts*
+
+Asserts that the value should contain the given substring, for example::
+
+```python
+from pactman import Includes, Like
+Like({
+    'id': 123, # match integer, value varies
+    'content': Includes('spam', 'Sample spamming content')  # content must contain the string "spam"
+})
+```
+
+The `matcher` and `sample_data` are used differently by consumer and provider depending
+upon whether they're used in the `with_request()` or `will_respond_with()` sections
+of the pact. Using the above example:
+
+#### Includes in request
+When you run the tests for the consumer, the mock will verify that the data
+the consumer uses in its request contains the `matcher` string, raising an AssertionError
+if invalid. When the contract is verified by the provider, the `sample_data` will be
+used in the request to the real provider service, in this case `'Sample spamming content'`.
+
+#### Includes in response
+When you run the tests for the consumer, the mock will return the data you provided
+as `sample_data`, in this case `'Sample spamming content'`. When the contract is verified on the
+provider, the data returned from the real provider service will be verified to ensure it
+contains the `matcher` string.
+
+
 ### Term(matcher, sample_data)
 Asserts the value should match the given regular expression. You could use this
 to expect a timestamp with a particular format in the request or response where
@@ -429,7 +460,7 @@ From there you can use pip to install it:
 
 2.12.0
 
-- Add `Equals` matcher
+- Add `Equals` and `Includes` matchers for pact v3+
 
 2.11.0
 

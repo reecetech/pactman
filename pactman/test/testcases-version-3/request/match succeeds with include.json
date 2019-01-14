@@ -1,6 +1,6 @@
 {
-  "match": false,
-  "comment": "Request match with include and fail",
+  "match": true,
+  "comment": "Request match with include and pass",
   "expected" : {
     "method": "POST",
     "path": "/",
@@ -40,7 +40,7 @@
     "body": {
       "alligator":{
         "feet": 5,
-        "name": "spam"
+        "name": "alexis"
       }
     }
   }
