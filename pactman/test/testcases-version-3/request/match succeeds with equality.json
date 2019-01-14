@@ -1,0 +1,46 @@
+{
+  "match": true,
+  "comment": "Request match with equality and pass",
+  "expected" : {
+    "method": "POST",
+    "path": "/",
+    "query": {},
+    "headers": {"Content-Type": "application/json"},
+    "matchingRules": {
+      "body": {
+        "$": {
+          "matchers": [
+            {
+              "match": "type"
+            }
+          ]
+        },
+        "$.alligator.feet": {
+          "matchers": [
+            {
+              "match": "equality"
+            }
+          ]
+        }
+      }
+    },
+    "body": {
+      "alligator":{
+        "name": "Jay",
+        "feet": 4
+      }
+    }
+  },
+  "actual": {
+    "method": "POST",
+    "path": "/",
+    "query": {},
+    "headers": {"Content-Type": "application/json"},
+    "body": {
+      "alligator":{
+        "feet": 4,
+        "name": "Alex"
+      }
+    }
+  }
+}

@@ -256,8 +256,8 @@ class MatchEquality(Matcher):
 
     def apply(self, data, spec, path):
         log.debug(f'match equality {data!r} {spec!r} {path!r}')
-        if data != self.rule['value']:
-            raise RuleFailed(path, f'value {data!r} does not equal expected {self.rule["value"]!r}')
+        if data != spec:
+            raise RuleFailed(path, f'value {data!r} does not equal expected {spec!r}')
 
 
 class MatchInclude(Matcher):
