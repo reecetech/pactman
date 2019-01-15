@@ -4,15 +4,15 @@ import requests
 from pactman import Equals, Consumer, Provider, Like
 
 
-def test_valid_types():
-    types = [None, list(), dict(), 1, 1.0, 'string', 'unicode']
-    for t in types:
-        Equals(t)
+@pytest.mark.parametrize('object', [None, list(), dict(), 1, 1.0, 'string'])
+def test_valid_types(object):
+    Equals(object)
 
 
-def test_invalid_types():
+@pytest.mark.parametrize('object', [set(), b'bytes'])
+def test_invalid_types(object):
     with pytest.raises(AssertionError) as e:
-        Equals(set())
+        Equals(object)
 
     assert 'matcher must be one of ' in str(e.value)
 
