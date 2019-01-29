@@ -332,6 +332,28 @@ def test_response_verifier(fake_interaction, mock_pact):
     r.verify(Mock(status_code=200, headers={'Content-Type': 'json-yeah'}, json=Mock(return_value=dict(a='b', c='c'))))
 
 
+@pytest.mark.parametrize("interaction", [
+    {'body': {'key1': 1}},
+    {'body': {'key1': 1}, 'matchingRules': {'$.body.key1': {'match': 'type'}}},
+])
+def test_ResponseVerifier_reports_correct_message_when_key_missing(mock_pact, interaction):
+    mock_result = Mock()
+    r = ResponseVerifier(mock_pact('2.0.0'), interaction, mock_result)
+    r.verify(FakeResponse({"body": {}}))
+    mock_result.fail.assert_called_with("Response element 'key1' is missing", ['body'])
+
+
+@pytest.mark.parametrize("interaction", [
+    {'body': {'key1': 1}},
+    {'body': {'key1': 1}, 'matchingRules': {'$.body.key1': {'match': 'type'}}},
+])
+def test_RequestVerifier_reports_correct_message_when_key_missing(mock_pact, interaction):
+    mock_result = Mock()
+    r = RequestVerifier(mock_pact('2.0.0'), interaction, mock_result)
+    r.verify(FakeRequest({"body": {}}))
+    mock_result.fail.assert_called_with("Request element 'key1' is missing", ['body'])
+
+
 class FakeResponse:
     status = 200
     body = None

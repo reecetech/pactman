@@ -258,7 +258,7 @@ class ResponseVerifier:
             return self.result.fail(f'{self.interaction_name} element is not an object (is {nice_type(data)})', path)
         for key in spec:
             if key not in data:
-                return self.result.fail(f'Expected element {key!r} not in response', path)
+                return self.result.fail(f'{self.interaction_name} element {key!r} is missing', path)
             p = path + [key]
             if not self.compare(data[key], spec[key], p):
                 return self.result.fail(f'{self.interaction_name} element {key} ({nice_type(data[key])}) '
@@ -370,7 +370,7 @@ class ResponseVerifier:
             p = path + [k]
             if k not in data:
                 # we always flag a failure if a given key is not in the response
-                return self.result.fail(f'Expected key {k!r} not in response', path)
+                return self.result.fail(f'{self.interaction_name} element {k!r} is missing', path)
             if not self.apply_rules(data[k], spec[k], p):
                 return False
         return True
