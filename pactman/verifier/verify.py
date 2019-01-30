@@ -182,6 +182,11 @@ class ResponseVerifier:
                     if not self.check_rules(actual, expected, [rule_section, header]):
                         log.info(f'{self.interaction_name} headers: {response.headers}')
                         return False
+                    break
+                else:
+                    self.result.fail(f'{self.interaction_name} missing header {header!r}')
+                    return False
+
         if self.body is not MISSING:
             if not self.check_rules(response.json(), self.body, ['body']):
                 log.info(f'{self.interaction_name} data: {response.json()}')

@@ -354,6 +354,22 @@ def test_RequestVerifier_reports_correct_message_when_key_missing(mock_pact, int
     mock_result.fail.assert_called_with("Request element 'key1' is missing", ['body'])
 
 
+def test_ResponseVerifier_checks_for_missing_headers(mock_pact):
+    interaction = {"headers": {"X-Custom-Header": "value1"}}
+    mock_result = Mock()
+    r = ResponseVerifier(mock_pact("2.0.0"), interaction, mock_result)
+    assert r.verify(FakeResponse({"headers": {}})) is False
+    mock_result.fail.assert_called_with("Response missing header 'X-Custom-Header'")
+
+
+def test_RequestVerifier_checks_for_missing_headers(mock_pact):
+    interaction = {"headers": {"X-Custom-Header": "value1"}}
+    mock_result = Mock()
+    r = RequestVerifier(mock_pact("2.0.0"), interaction, mock_result)
+    assert r.verify(FakeRequest({"headers": {}})) is False
+    mock_result.fail.assert_called_with("Request missing header 'X-Custom-Header'")
+
+
 class FakeResponse:
     status = 200
     body = None
