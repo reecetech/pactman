@@ -306,6 +306,9 @@ def rule_matchers_v2(rules):
     v2 rules are specified in a single dictionary with the jsonpath $.<section>[.additional.jsonpath]:
 
         "matchingRules": {
+            "$.query.customer_number": {
+                "regex": "\\d+"
+            },
             "$.body[0][*].email": {
                 "match": "type"
             },
@@ -318,7 +321,14 @@ def rule_matchers_v2(rules):
     """
     matchers = defaultdict(list)
     for path, spec in rules.items():
-        section = list(split_path(path))[1]
+        split = list(split_path(path))
+        section = split[1]
+        if section == 'query':
+            # query rules need to be fudged so they match the elements of the *array* if the path
+            # doesn't already reference the array - so $.query.customer_number will become
+            # $.query.customer_number[*] but $.query.customer_number[1] will be untouched
+            if split[-1][0] not in '*0123456789':
+                path += '[*]'
         matchers[section].append(Matcher.get_matcher(path, spec))
     return matchers
 

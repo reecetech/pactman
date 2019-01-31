@@ -414,7 +414,7 @@ class FakeRequest:
             all_testcases(BASE_DIR / 'pact-spec-version-1.1' / 'testcases' / 'request', '1.1.0'),
             all_testcases(BASE_DIR / 'pact-spec-version-2' / 'testcases' / 'request', '2.0.0'),
             all_testcases(BASE_DIR / 'pact-spec-version-3' / 'testcases' / 'request', '3.0.0'),
-            # all_testcases(BASE_DIR / 'testcases-version-2' / 'request', '2.0.0'),
+            all_testcases(BASE_DIR / 'testcases-version-2' / 'request', '2.0.0'),
             all_testcases(BASE_DIR / 'testcases-version-3' / 'request', '3.0.0'),
         ))
     )
