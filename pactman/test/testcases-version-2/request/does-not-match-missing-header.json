@@ -1,0 +1,12 @@
+{
+  "match": false,
+  "comment": "Does not match if missing header",
+  "expected" : {
+    "headers": {
+      "X-Custom-Header": "value1"
+    }
+  },
+  "actual": {
+    "headers": {}
+  }
+}
