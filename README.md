@@ -461,6 +461,7 @@ From there you can use pip to install it:
 2.12.0
 
 - Add `Equals` and `Includes` matchers for pact v3+
+- Make verification fail if missing header specified in interaction
 
 2.11.0
 
