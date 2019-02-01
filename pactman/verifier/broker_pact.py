@@ -39,7 +39,10 @@ class BrokerPacts:
 
     def consumers(self):
         nav = self.get_broker_navigator()
-        broker_provider = nav['latest-provider-pacts'](provider=self.provider_name)
+        try:
+            broker_provider = nav['latest-provider-pacts'](provider=self.provider_name)
+        except Exception as e:
+            raise ValueError(f'error fetching pacts from {self.pact_broker_url} for {self.provider_name}: {e}')
         broker_provider.fetch()
         for broker_pact in broker_provider['pacts']:
             pact_contents = broker_pact.fetch()
