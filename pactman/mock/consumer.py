@@ -95,7 +95,7 @@ class Consumer(object):
             values "no" (default) or "yes".
         :type use_mocking_server: bool
         :return: A Pact object which you can use to define the specific
-            interaction s your code will have with the provider.
+            interactions your code will have with the provider.
         :rtype: pact.Pact
         """
         if not isinstance(provider, (Provider,)):

@@ -7,7 +7,6 @@ import logging
 import os
 import urllib.parse
 
-import restnavigator.exc
 import semver
 from restnavigator import Navigator
 
@@ -43,7 +42,7 @@ class BrokerPacts:
         try:
             broker_provider = nav['latest-provider-pacts'](provider=self.provider_name)
         except Exception as e:
-            raise ValueError(f'error fetching pacts from {self.pact_broker_url} for {self.provider_name}: {e.exception}')
+            raise ValueError(f'error fetching pacts from {self.pact_broker_url} for {self.provider_name}: {e}')
         broker_provider.fetch()
         for broker_pact in broker_provider['pacts']:
             pact_contents = broker_pact.fetch()
