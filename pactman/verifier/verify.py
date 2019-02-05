@@ -39,7 +39,7 @@ class Interaction:
     def verify(self, service_url, setup_url):
         self.result.start(self)
         try:
-            self.result.success = self.setup(setup_url)
+            self.setup(setup_url)
             if self.result.success:
                 self.result.success = self.run_service(service_url)
         finally:
@@ -51,9 +51,8 @@ class Interaction:
             try:
                 self.setup_state(provider_setup)
             except Exception as e:
-                self.result.fail(f'Unable to configure provider state: {e}')
-            else:
-                self.result.success = self.run_service(service_url)
+                self.result.warn(f'Unable to configure provider state: {e}')
+            self.result.success = self.run_service(service_url)
         finally:
             self.result.end()
 
@@ -138,13 +137,13 @@ class Interaction:
                 reason = str(e.args[0].reason).split(": ", 1)[1]
             except Exception:
                 reason = str(e)
-            return self.result.fail(f'Unable to configure provider state {state!r} at {setup_url}: {reason}')
+            return self.result.warn(f'Unable to configure provider state {state!r} at {setup_url}: {reason}')
         if r.status_code != 200:
             text = repr(r.text)
             if len(text) > 60:
                 text = text[:60] + '...' + text[-1]
             log.debug(f'HTTP {r.status_code} from provider state setup URL: {text}')
-            return self.result.fail(f'Invalid provider state {state!r}')
+            return self.result.warn(f'Invalid provider state {state!r}')
         log.info(f'Using provider state {state!r}')
         return True
 
@@ -168,6 +167,10 @@ class Interaction:
         return self._request_headers.get('Content-Type', 'application/json')
 
 
+def rules_present(item):
+    return "present" if item is not MISSING else "absent"
+
+
 class ResponseVerifier:
     interaction_name = 'Response'
 
@@ -187,8 +190,9 @@ class ResponseVerifier:
         self.result = result
 
     def verify(self, response):
-        log.debug(f'{self.__class__.__name__}.verify headers={self.headers is not MISSING} '
-                  f'body={self.body is not MISSING} rules={self.matching_rules != {}}')
+        log.debug(f'Verifying Response: request headers={rules_present(self.headers)}, '
+                  f'request body={rules_present(self.body)}, '
+                  f'matching rules={"present" if self.matching_rules != {} else "absent"}')
         if self.status is not MISSING and response.status_code != self.status:
             log.debug(f'.. response {response.text}')
             return self.result.fail(f'{self.interaction_name} status code {response.status_code} is not '
@@ -417,8 +421,8 @@ class RequestVerifier(ResponseVerifier):
         super().__init__(pact, interaction, result)
 
     def verify(self, request):
-        log.debug(f'{self.__class__.__name__}.verify method={self.method is not MISSING} '
-                  f'path={self.path is not MISSING} query={self.query is not MISSING}')
+        log.debug(f'Verifying Request: request method={rules_present(self.method)}, '
+                  f'request path={rules_present(self.path)}, query={rules_present(self.query)}')
         if self.method is not MISSING and request.method.lower() != self.method.lower():
             return self.result.fail(f'Request method {request.method!r} does not match expected {self.method!r}')
         if self.path is not MISSING:

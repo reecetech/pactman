@@ -517,6 +517,7 @@ From there you can use pip to install it:
 - Add `Equals` and `Includes` matchers for pact v3+
 - Make verification fail if missing header specified in interaction
 - Significantly improved support for pytest provider verification of pacts
+- Turned pact state call failures into warnings rather than errors
 
 2.11.0
 

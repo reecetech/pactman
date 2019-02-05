@@ -1,10 +1,11 @@
 import glob
-import os
-
+import logging
 import pytest
+import os
+from _pytest.outcomes import Failed
 
 from .broker_pact import BrokerPact, BrokerPacts
-from .result import PytestResult
+from .result import log, PytestResult
 
 
 def pytest_addoption(parser):
@@ -35,6 +36,14 @@ def pytest_report_header(config):
         return [f'Loading pacts from {location}']
 
 
+def pytest_configure(config):
+    logging.getLogger().handlers = []
+    logging.basicConfig(format='%(message)s')
+    verbosity = config.getoption('verbose')
+    if verbosity > 0:
+        log.setLevel(logging.DEBUG)
+
+
 class PytestPactVerifier:
     def __init__(self, publish_results, provider_version, interaction_or_pact):
         self.publish_results = publish_results
@@ -45,9 +54,12 @@ class PytestPactVerifier:
         if isinstance(self.interaction_or_pact, BrokerPact):
             if self.publish_results and self.provider_version:
                 self.interaction_or_pact.publish_result(self.provider_version)
-            assert self.interaction_or_pact.success, f'Verification of {self.interaction_or_pact} failed'
+            # assert self.interaction_or_pact.success, f'Verification of {self.interaction_or_pact} failed'
         else:
-            self.interaction_or_pact.verify_with_callable_setup(provider_url, provider_setup)
+            try:
+                self.interaction_or_pact.verify_with_callable_setup(provider_url, provider_setup)
+            except (Failed, AssertionError) as e:
+                raise Failed(str(e)) from None
 
 
 def flatten_pacts(pacts, with_consumer=True):
