@@ -16,6 +16,10 @@ class ProviderStateError(Exception):
     pass
 
 
+class ProviderStateMissing(ProviderStateError):
+    pass
+
+
 class Interaction:
     def __init__(self, pact, interaction, result_factory):
         self.pact = pact
@@ -27,17 +31,39 @@ class Interaction:
         self.response = ResponseVerifier(pact, interaction['response'], self.result)
 
     def __repr__(self):
-        return f"{self.pact.consumer}:{self.description}"
+        return f"<Interaction {self.pact.consumer}:{self.description}>"
+
+    def __str__(self):
+        return f"{self.pact.consumer} verifying '{self.description}'"
 
     def verify(self, service_url, setup_url):
         self.result.start(self)
         try:
             self.result.success = self.setup(setup_url)
-            if not self.result.success:
-                return False
-            self.result.success = self.run_service(service_url)
+            if self.result.success:
+                self.result.success = self.run_service(service_url)
         finally:
             self.result.end()
+
+    def verify_with_callable_setup(self, service_url, provider_setup):
+        self.result.start(self)
+        try:
+            try:
+                self.setup_state(provider_setup)
+            except Exception as e:
+                self.result.fail(f'Unable to configure provider state: {e}')
+            else:
+                self.result.success = self.run_service(service_url)
+        finally:
+            self.result.end()
+
+    def setup_state(self, provider_setup):
+        if self.providerState is not None:
+            return provider_setup(self.providerState)
+        for state in self.providerStates:
+            if 'name' not in state:
+                raise ValueError(f'provider state missing "name": {state}')
+            provider_setup(state['name'], **state.get('params', {}))
 
     def run_service(self, service_url):
         method = self.request['method'].upper()
