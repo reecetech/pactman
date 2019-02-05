@@ -45,28 +45,31 @@ def pytest_configure(config):
 
 
 class PytestPactVerifier:
-    def __init__(self, publish_results, provider_version, interaction_or_pact):
+    def __init__(self, publish_results, provider_version, interaction, consumer):
         self.publish_results = publish_results
         self.provider_version = provider_version
-        self.interaction_or_pact = interaction_or_pact
+        self.interaction = interaction
+        self.consumer = consumer
 
     def verify(self, provider_url, provider_setup):
-        if isinstance(self.interaction_or_pact, BrokerPact):
-            if self.publish_results and self.provider_version:
-                self.interaction_or_pact.publish_result(self.provider_version)
-            # assert self.interaction_or_pact.success, f'Verification of {self.interaction_or_pact} failed'
-        else:
-            try:
-                self.interaction_or_pact.verify_with_callable_setup(provider_url, provider_setup)
-            except (Failed, AssertionError) as e:
-                raise Failed(str(e)) from None
+        try:
+            self.interaction.verify_with_callable_setup(provider_url, provider_setup)
+        except (Failed, AssertionError) as e:
+            raise Failed(str(e)) from None
+
+    def finish(self):
+        if self.consumer and self.publish_results and self.provider_version:
+            self.consumer.publish_result(self.provider_version)
 
 
 def flatten_pacts(pacts, with_consumer=True):
     for consumer in pacts:
-        yield from consumer.interactions
-        if with_consumer:
-            yield consumer
+        last = consumer.interactions[-1]
+        for interaction in consumer.interactions:
+            if interaction is last and with_consumer:
+                yield (interaction, consumer)
+            else:
+                yield (interaction, None)
 
 
 def get_pact_files(file_location):
@@ -76,6 +79,11 @@ def get_pact_files(file_location):
         yield BrokerPact.load_file(filename, result_factory=PytestResult)
 
 
+def test_id(identifier):
+    interaction, consumer = identifier
+    return str(interaction)
+
+
 def pytest_generate_tests(metafunc):
     if 'pact_verifier' in metafunc.fixturenames:
         broker_url = get_broker_url(metafunc.config)
@@ -83,7 +91,7 @@ def pytest_generate_tests(metafunc):
             pact_files = get_pact_files(metafunc.config.getoption('pact_files'))
             if not pact_files:
                 raise ValueError('need a --pact-broker-url or --pact-files option')
-            metafunc.parametrize("pact_verifier", flatten_pacts(pact_files, with_consumer=False), ids=str,
+            metafunc.parametrize("pact_verifier", flatten_pacts(pact_files, with_consumer=False), ids=test_id,
                                  indirect=True)
         else:
             provider_name = metafunc.config.getoption('provider_name')
@@ -91,10 +99,13 @@ def pytest_generate_tests(metafunc):
                 raise ValueError('--pact-broker-url requires the --provider-name option')
             broker_pacts = BrokerPacts(provider_name, pact_broker_url=broker_url, result_factory=PytestResult)
             metafunc.parametrize("pact_verifier", flatten_pacts(broker_pacts.consumers()),
-                                 ids=str, indirect=True)
+                                 ids=test_id, indirect=True)
 
 
 @pytest.fixture()
 def pact_verifier(pytestconfig, request):
-    return PytestPactVerifier(pytestconfig.getoption('publish_results'), pytestconfig.getoption('provider_version'),
-                              request.param)
+    interaction, consumer = request.param
+    p = PytestPactVerifier(pytestconfig.getoption('publish_results'), pytestconfig.getoption('provider_version'),
+                           interaction, consumer)
+    yield p
+    p.finish()

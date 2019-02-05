@@ -34,7 +34,7 @@ class Interaction:
         return f"<Interaction {self.pact.consumer}:{self.description}>"
 
     def __str__(self):
-        return f"{self.pact.consumer} verifying '{self.description}'"
+        return f"{self.pact.consumer} with request '{self.description}'"
 
     def verify(self, service_url, setup_url):
         self.result.start(self)
