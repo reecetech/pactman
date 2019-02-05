@@ -62,11 +62,11 @@ class PytestPactVerifier:
             self.consumer.publish_result(self.provider_version)
 
 
-def flatten_pacts(pacts, with_consumer=True):
+def flatten_pacts(pacts):
     for consumer in pacts:
         last = consumer.interactions[-1]
         for interaction in consumer.interactions:
-            if interaction is last and with_consumer:
+            if interaction is last:
                 yield (interaction, consumer)
             else:
                 yield (interaction, None)
@@ -91,8 +91,7 @@ def pytest_generate_tests(metafunc):
             pact_files = get_pact_files(metafunc.config.getoption('pact_files'))
             if not pact_files:
                 raise ValueError('need a --pact-broker-url or --pact-files option')
-            metafunc.parametrize("pact_verifier", flatten_pacts(pact_files, with_consumer=False), ids=test_id,
-                                 indirect=True)
+            metafunc.parametrize("pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True)
         else:
             provider_name = metafunc.config.getoption('provider_name')
             if not provider_name:
