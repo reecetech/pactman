@@ -440,11 +440,14 @@ For more information about provider states, refer to the [Pact documentation] on
 ## Verifying Pacts Using pytest
 
 Rather than run the separate `pactman-verifier` command, you may opt to use pytest to run your provider
-pact verification. To verify pacts for a provider you would write a new pytest test module, typically
-called `verify_pacts.py` (so that it is not picked up by pytest during normal test execution) which
-for a Django project contains:
+pact verification. To verify pacts for a provider you would write a new pytest test module. If you don't
+want it to be exercised in your usual unit test run you can call it `verify_pacts.py`. An example
+for a Django project might contain:
 
 ```python
+from django.contrib.auth.models import User
+from pactman.verifier.verify import ProviderStateMissing
+
 def provider_state(name, **params):
     if name == 'the user "pat" exists':
         User.objects.create(username='pat', fullname=params['fullname'])
