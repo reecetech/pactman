@@ -212,7 +212,7 @@ class Pact(object):
         return self
 
     def setup(self):
-        self._mock_handler.setup(self._interactions)
+        self._mock_handler.set_provider_state_with_url(self._interactions)
 
     def start_mocking(self):
         if self.use_mocking_server:
