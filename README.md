@@ -500,14 +500,14 @@ The `provider_state` function passed to `pact_verifier.verify` will be passed th
 Once you have written the pytest code, you need to invoke pytest with additional arguments:
 
 `--pact-broker-url=<URL>` provides the base URL of the Pact broker to retrieve pacts from for the
-provider. You must also provide `--provider-name=<ProviderName>` to identify which provider to
+provider. You must also provide `--pact-provider-name=<ProviderName>` to identify which provider to
 retrieve pacts for from the broker.
 
 `--pact-files=<file pattern>` verifies some on-disk pact JSON files identified by the wildcard pattern
 (unix glob pattern matching).
 
-If you pulled the pacts from a broker and wish to publish verification results, use `--publish-results`
-to turn on publishing the results. This option also requires you to specify `--provider-version=<version>`.
+If you pulled the pacts from a broker and wish to publish verification results, use `--pact-publish-results`
+to turn on publishing the results. This option also requires you to specify `--pact-provider-version=<version>`.
 
 So, for example:
 
@@ -516,7 +516,7 @@ So, for example:
 $ pytest --pact-files=/tmp/pacts/*.json tests/verify_pacts.py
 
 # verify some pacts in a broker for the provider MyService
-$ pytest --pact-broker-url=http://pact-broker.example/ --provider-name=MyService tests/verify_pacts.py
+$ pytest --pact-broker-url=http://pact-broker.example/ --pact-provider-name=MyService tests/verify_pacts.py
 ```
 
 

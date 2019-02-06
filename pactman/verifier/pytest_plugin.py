@@ -13,11 +13,11 @@ def pytest_addoption(parser):
                      help="pact JSON files to verify (wildcards allowed)")
     parser.addoption("--pact-broker-url", default='',
                      help="pact broker URL")
-    parser.addoption("--provider-name", default=None,
+    parser.addoption("--pact-provider-name", default=None,
                      help="provider pact name")
-    parser.addoption("--publish-results", action="store_true", default=False,
+    parser.addoption("--pact-publish-results", action="store_true", default=False,
                      help="report pact results to pact broker")
-    parser.addoption("--provider-version", default=None,
+    parser.addoption("--pact-provider-version", default=None,
                      help="provider version to use when reporting pact results to pact broker")
 
 
@@ -93,9 +93,9 @@ def pytest_generate_tests(metafunc):
                 raise ValueError('need a --pact-broker-url or --pact-files option')
             metafunc.parametrize("pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True)
         else:
-            provider_name = metafunc.config.getoption('provider_name')
+            provider_name = metafunc.config.getoption('pact_provider_name')
             if not provider_name:
-                raise ValueError('--pact-broker-url requires the --provider-name option')
+                raise ValueError('--pact-broker-url requires the --pact-provider-name option')
             broker_pacts = BrokerPacts(provider_name, pact_broker_url=broker_url, result_factory=PytestResult)
             metafunc.parametrize("pact_verifier", flatten_pacts(broker_pacts.consumers()),
                                  ids=test_id, indirect=True)
@@ -104,7 +104,8 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture()
 def pact_verifier(pytestconfig, request):
     interaction, consumer = request.param
-    p = PytestPactVerifier(pytestconfig.getoption('publish_results'), pytestconfig.getoption('provider_version'),
+    p = PytestPactVerifier(pytestconfig.getoption('pact_publish_results'),
+                           pytestconfig.getoption('pact_provider_version'),
                            interaction, consumer)
     yield p
     p.finish()
