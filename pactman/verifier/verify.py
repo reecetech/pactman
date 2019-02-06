@@ -125,12 +125,12 @@ class Interaction:
 
     def set_provider_state_with_url(self, setup_url):
         if self.providerState is not None:
-            return self.__set_provider_state_with_url(setup_url, 'state', self.providerState)
+            return self.set_versioned_provider_state(setup_url, 'state', self.providerState)
         elif self.providerStates is not None:
-            return self.__set_provider_state_with_url(setup_url, 'states', self.providerStates)
+            return self.set_versioned_provider_state(setup_url, 'states', self.providerStates)
         return True
 
-    def __set_provider_state_with_url(self, setup_url, var, state):
+    def set_versioned_provider_state(self, setup_url, var, state):
         log.debug(f'Setting up provider state {state!r}')
         args = {
             'provider': self.pact.provider,
@@ -145,7 +145,7 @@ class Interaction:
                 reason = str(e.args[0].reason).split(": ", 1)[1]
             except Exception:
                 reason = str(e)
-            return self.result.warn(f'Unable to configure provider state {state!r} at {setup_url}: {reason}')
+            return self.result.fail(f'Unable to configure provider state {state!r} at {setup_url}: {reason}')
         if r.status_code != 200:
             text = repr(r.text)
             if len(text) > 60:

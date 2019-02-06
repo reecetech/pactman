@@ -15,6 +15,9 @@ class Result:
     def end(self):
         pass
 
+    def warn(self, message):
+        raise NotImplementedError()
+
     def fail(self, message, path=None):
         raise NotImplementedError()   # pragma: no cover
 
