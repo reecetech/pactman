@@ -76,7 +76,7 @@ def get_pact_files(file_location):
 
 
 def test_id(identifier):
-    interaction, consumer = identifier
+    interaction, _ = identifier
     return str(interaction)
 
 

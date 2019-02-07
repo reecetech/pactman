@@ -114,7 +114,7 @@ class Interaction:
             return
         for state in self.providerStates:
             if 'name' not in state:
-                raise ValueError(f'provider state missing "name": {state}')
+                raise KeyError(f'provider state missing "name": {state}')
             name = state['name']
             params = state.get('params', {})
             log.debug(f"Setting up provider state {name!r} with params {params}")
