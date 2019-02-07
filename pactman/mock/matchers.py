@@ -50,7 +50,8 @@ class EachLike(Matcher):
         :type minimum: int
         """
         self.matcher = matcher
-        assert minimum >= 1, 'Minimum must be greater than or equal to 1'
+        if minimum < 1:
+            raise AssertionError('Minimum must be greater than or equal to 1')
         self.minimum = minimum
 
     def ruby_protocol(self):

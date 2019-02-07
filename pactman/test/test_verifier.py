@@ -55,6 +55,7 @@ def mock_pact():
 def mock_result():
     result = Result()
     result.fail = Mock(return_value=False)
+    result.warn = Mock()
     return result
 
 
@@ -76,7 +77,7 @@ def test_pact_loading(monkeypatch, fake_pact):
     })
 
     for e in p.consumers():
-        assert str(e) == '<Pact consumer=SpamConsumer provider=SpamProvider>'
+        assert str(e) == 'Pact between consumer SpamConsumer and provider SpamProvider'
         assert e.provider == 'SpamProvider'
 
     for e in p.all_interactions():
@@ -114,7 +115,7 @@ def test_pact_publish_aggregates_interaction_results(
 
 def test_pact_file_loading(fake_interaction):
     p = BrokerPact.load_file(str(BASE_DIR / 'testcases-version-3' / 'dummypact.json'))
-    assert str(p) == '<Pact consumer=SpamConsumer provider=SpamProvider>'
+    assert str(p) == 'Pact between consumer SpamConsumer and provider SpamProvider'
     assert p.provider == 'SpamProvider'
     for e in p.interactions:
         assert e.description == 'dummy'
@@ -122,7 +123,7 @@ def test_pact_file_loading(fake_interaction):
 
 def test_interaction(mock_pact, mock_result_factory, fake_interaction):
     i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
-    assert repr(i) == 'SpamConsumer:dummy'
+    assert repr(i) == '<Interaction SpamConsumer:dummy>'
 
 
 def test_interaction_verify_get(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
@@ -309,7 +310,7 @@ def test_interaction_setup_fails(monkeypatch, mock_pact, mock_result_factory, fa
     fake_interaction[option] = 'some state'
     i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
     i.verify('http://provider.example/', 'http://provider.example/pact-setup/')
-    i.result.fail.assert_called_with("Invalid provider state 'some state'")
+    i.result.warn.assert_called_with("Invalid provider state 'some state'")
 
 
 def test_interaction_setup_connection_fails(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
@@ -318,7 +319,7 @@ def test_interaction_setup_connection_fails(monkeypatch, mock_pact, mock_result_
     # monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
     fake_interaction['providerState'] = 'some state'
     i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
-    i.set_up_state('http://provider.example/pact-setup/', 'state', 'some state')
+    i.set_versioned_provider_state('http://provider.example/pact-setup/', 'state', 'some state')
     i.result.fail.assert_called_once()
 
 

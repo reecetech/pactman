@@ -407,7 +407,18 @@ During mocking, the HTTP response will be handled as:
 3. Otherwise pass through the `Content-Type` header and body as-is.
    Binary data is not supported.
 
+
 ## Verifying Pacts Against a Service
+You have two options for verifying pacts against a service you created:
+
+1. Use the `pactman-verifier` command-line program which replays the pact assertions against
+   a running instance of your service, or
+2. Use the `pytest` support built into pactman to replay the pacts as test cases, allowing
+   use of other testing mechanisms such as mocking and transaction control.
+
+
+### Using `pactman-verifier`
+
 Run `pactman-verifier -h` to see the options available. To run all pacts registered to a provider in a [Pact Broker]:
 
     pactman-verifier -b http://pact-broker.example/ <provider name> <provider url> <provider setup url>
@@ -418,7 +429,9 @@ You can pass in a local pact file with `-l`, this will verify the service agains
 
     pactman-verifier -l /tmp/localpact.json <provider name> <provider url> <provider setup url>
 
-### Provider States
+
+#### Provider States
+
 In many cases, your contracts will need very specific data to exist on the provider
 to pass successfully. If you are fetching a user profile, that user needs to exist,
 if querying a list of records, one or more records needs to exist. To support
@@ -436,6 +449,76 @@ on the provider application or a separate one. Some strategies for managing stat
 - A standalone application that can start and stop the other server with different datastore states
 
 For more information about provider states, refer to the [Pact documentation] on [Provider States].
+
+
+### Verifying Pacts Using `pytest`
+
+To verify pacts for a provider you would write a new pytest test module in the provider's test suite.
+If you don't want it to be exercised in your usual unit test run you can call it `verify_pacts.py`.
+
+Your test code needs to use the `pact_verifier` fixture provided by pactman, invoking
+its `verify()` method with the URL to the running instance of your service (`pytest-django` provides
+a handy `live_server` fixture which works well here) and a callback to set up provider states (described
+below).
+
+You'll need to include some extra command-line arguments to pytest (also described below) to indicate
+where the pacts should come from, and whether verification results should be posted to a pact broker.
+
+An example for a Django project might contain:
+
+```python
+from django.contrib.auth.models import User
+from pactman.verifier.verify import ProviderStateMissing
+
+def provider_state(name, **params):
+    if name == 'the user "pat" exists':
+        User.objects.create(username='pat', fullname=params['fullname'])
+    else:
+        raise ProviderStateMissing(name)
+
+def test_pacts(live_server, pact_verifier):
+    pact_verifier.verify(live_server.url, provider_state)
+```
+
+The test function may do any level of mocking and data setup using standard pytest fixtures - so mocking
+downstream APIs or other interactions within the provider may be done with standard monkeypatching.
+
+
+#### Provider states using `pytest`
+
+The `provider_state` function passed to `pact_verifier.verify` will be passed the `providerState` and
+`providerStates` for all pacts being verified.
+
+- For pacts with **providerState** the `name` argument will be the `providerState` value,
+  and `params` will be empty.
+- For pacts with **providerStates** the function will be invoked once per entry in `providerStates`
+  array with the `name` argument taken from the array entry `name` parameter, and `params` from
+  the `params` parameter. 
+
+#### Command line options to control `pytest` verifying pacts
+
+Once you have written the pytest code, you need to invoke pytest with additional arguments:
+
+`--pact-broker-url=<URL>` provides the base URL of the Pact broker to retrieve pacts from for the
+provider. You must also provide `--pact-provider-name=<ProviderName>` to identify which provider to
+retrieve pacts for from the broker.
+
+`--pact-files=<file pattern>` verifies some on-disk pact JSON files identified by the wildcard pattern
+(unix glob pattern matching).
+
+If you pulled the pacts from a broker and wish to publish verification results, use `--pact-publish-results`
+to turn on publishing the results. This option also requires you to specify `--pact-provider-version=<version>`.
+
+So, for example:
+
+```bash
+# verify some local pacts in /tmp/pacts
+$ pytest --pact-files=/tmp/pacts/*.json tests/verify_pacts.py
+
+# verify some pacts in a broker for the provider MyService
+$ pytest --pact-broker-url=http://pact-broker.example/ --pact-provider-name=MyService tests/verify_pacts.py
+```
+
 
 # Development
 Please read [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -462,6 +545,8 @@ From there you can use pip to install it:
 
 - Add `Equals` and `Includes` matchers for pact v3+
 - Make verification fail if missing header specified in interaction
+- Significantly improved support for pytest provider verification of pacts
+- Turned pact state call failures into warnings rather than errors
 
 2.11.0
 

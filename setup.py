@@ -25,10 +25,10 @@ setup(
     author='ReeceTech',
     author_email='richard.jones@reece.com.au',
     url='https://github.com/reecetech/pactman',
-    entry_points='''
-        [console_scripts]
-        pactman-verifier=pactman.verifier.command_line:main
-    ''',
+    entry_points={
+        'pytest11': ['pactman-verifier=pactman.verifier.pytest_plugin'],
+        'console_scripts': ['pactman-verifier=pactman.verifier.command_line:main'],
+    },
     install_requires=[
         'pytest',
         'requests',

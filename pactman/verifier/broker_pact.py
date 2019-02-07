@@ -52,6 +52,9 @@ class BrokerPacts:
         for pact in self.consumers():
             yield from pact.interactions
 
+    def __iter__(self):
+        return self.all_interactions()
+
 
 class BrokerPact:
     def __init__(self, pact, result_factory, broker_pact=None):
@@ -68,14 +71,20 @@ class BrokerPact:
         self.interactions = [Interaction(self, interaction, result_factory) for interaction in pact['interactions']]
         self.broker_pact = broker_pact
 
-    def __str__(self):
+    def __repr__(self):
         return f'<Pact consumer={self.consumer} provider={self.provider}>'
+
+    def __str__(self):
+        return f'Pact between consumer {self.consumer} and provider {self.provider}'
+
+    @property
+    def success(self):
+        return all(interaction.result.success for interaction in self.interactions)
 
     def publish_result(self, version):
         if self.broker_pact is None:
             return
-        success = all(interaction.result.success for interaction in self.interactions)
-        self.broker_pact['publish-verification-results'].create(dict(success=success,
+        self.broker_pact['publish-verification-results'].create(dict(success=self.success,
                                                                      providerApplicationVersion=version))
 
     @classmethod

@@ -16,6 +16,10 @@ class ProviderStateError(Exception):
     pass
 
 
+class ProviderStateMissing(ProviderStateError):
+    pass
+
+
 class Interaction:
     def __init__(self, pact, interaction, result_factory):
         self.pact = pact
@@ -27,14 +31,27 @@ class Interaction:
         self.response = ResponseVerifier(pact, interaction['response'], self.result)
 
     def __repr__(self):
-        return f"{self.pact.consumer}:{self.description}"
+        return f"<Interaction {self.pact.consumer}:{self.description}>"
+
+    def __str__(self):
+        return f"{self.pact.consumer} with request '{self.description}'"
 
     def verify(self, service_url, setup_url):
         self.result.start(self)
         try:
-            self.result.success = self.setup(setup_url)
-            if not self.result.success:
-                return False
+            self.set_provider_state_with_url(setup_url)
+            if self.result.success:
+                self.result.success = self.run_service(service_url)
+        finally:
+            self.result.end()
+
+    def verify_with_callable_setup(self, service_url, provider_setup):
+        self.result.start(self)
+        try:
+            try:
+                self.set_provider_state(provider_setup)
+            except ProviderStateMissing as e:
+                self.result.warn(f'Unable to configure provider state: {e}')
             self.result.success = self.run_service(service_url)
         finally:
             self.result.end()
@@ -90,14 +107,31 @@ class Interaction:
         r = requests.patch(self._get_url(service_url), json=self._request_payload, headers=self._request_headers)
         return self.response.verify(r)
 
-    def setup(self, setup_url):
+    def set_provider_state(self, provider_setup):
         if self.providerState is not None:
-            return self.set_up_state(setup_url, 'state', self.providerState)
+            log.debug(f'Setting up provider state {self.providerState!r}')
+            provider_setup(self.providerState)
+            return
+        for state in self.providerStates:
+            if 'name' not in state:
+                raise KeyError(f'provider state missing "name": {state}')
+            name = state['name']
+            params = state.get('params', {})
+            log.debug(f"Setting up provider state {name!r} with params {params}")
+            provider_setup(state['name'], **params)
+            if params:
+                log.info(f'Using provider state {name} with params {params}')
+            else:
+                log.info(f'Using provider state {name}')
+
+    def set_provider_state_with_url(self, setup_url):
+        if self.providerState is not None:
+            return self.set_versioned_provider_state(setup_url, 'state', self.providerState)
         elif self.providerStates is not None:
-            return self.set_up_state(setup_url, 'states', self.providerStates)
+            return self.set_versioned_provider_state(setup_url, 'states', self.providerStates)
         return True
 
-    def set_up_state(self, setup_url, var, state):
+    def set_versioned_provider_state(self, setup_url, var, state):
         log.debug(f'Setting up provider state {state!r}')
         args = {
             'provider': self.pact.provider,
@@ -118,7 +152,7 @@ class Interaction:
             if len(text) > 60:
                 text = text[:60] + '...' + text[-1]
             log.debug(f'HTTP {r.status_code} from provider state setup URL: {text}')
-            return self.result.fail(f'Invalid provider state {state!r}')
+            return self.result.warn(f'Invalid provider state {state!r}')
         log.info(f'Using provider state {state!r}')
         return True
 
@@ -142,6 +176,10 @@ class Interaction:
         return self._request_headers.get('Content-Type', 'application/json')
 
 
+def rules_present(item):
+    return "present" if item is not MISSING else "absent"
+
+
 class ResponseVerifier:
     interaction_name = 'Response'
 
@@ -161,8 +199,9 @@ class ResponseVerifier:
         self.result = result
 
     def verify(self, response):
-        log.debug(f'{self.__class__.__name__}.verify headers={self.headers is not MISSING} '
-                  f'body={self.body is not MISSING} rules={self.matching_rules != {}}')
+        log.debug(f'Verifying Response: request headers={rules_present(self.headers)}, '
+                  f'request body={rules_present(self.body)}, '
+                  f'matching rules={"present" if self.matching_rules != {} else "absent"}')
         if self.status is not MISSING and response.status_code != self.status:
             log.debug(f'.. response {response.text}')
             return self.result.fail(f'{self.interaction_name} status code {response.status_code} is not '
@@ -391,8 +430,8 @@ class RequestVerifier(ResponseVerifier):
         super().__init__(pact, interaction, result)
 
     def verify(self, request):
-        log.debug(f'{self.__class__.__name__}.verify method={self.method is not MISSING} '
-                  f'path={self.path is not MISSING} query={self.query is not MISSING}')
+        log.debug(f'Verifying Request: request method={rules_present(self.method)}, '
+                  f'request path={rules_present(self.path)}, query={rules_present(self.query)}')
         if self.method is not MISSING and request.method.lower() != self.method.lower():
             return self.result.fail(f'Request method {request.method!r} does not match expected {self.method!r}')
         if self.path is not MISSING:
