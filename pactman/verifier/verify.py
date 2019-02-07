@@ -50,7 +50,7 @@ class Interaction:
         try:
             try:
                 self.set_provider_state(provider_setup)
-            except Exception as e:
+            except ProviderStateMissing as e:
                 self.result.warn(f'Unable to configure provider state: {e}')
             self.result.success = self.run_service(service_url)
         finally:
