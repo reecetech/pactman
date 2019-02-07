@@ -110,7 +110,8 @@ class Interaction:
     def set_provider_state(self, provider_setup):
         if self.providerState is not None:
             log.debug(f'Setting up provider state {self.providerState!r}')
-            return provider_setup(self.providerState)
+            provider_setup(self.providerState)
+            return
         for state in self.providerStates:
             if 'name' not in state:
                 raise ValueError(f'provider state missing "name": {state}')

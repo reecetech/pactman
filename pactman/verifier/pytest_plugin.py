@@ -22,11 +22,7 @@ def pytest_addoption(parser):
 
 
 def get_broker_url(config):
-    if config.getoption('pact_broker_url'):
-        return config.getoption('pact_broker_url')
-    if os.environ.get('PACT_BROKER_URL'):
-        return os.environ.get('PACT_BROKER_URL')
-    return None
+    return config.getoption('pact_broker_url') or os.environ.get('PACT_BROKER_URL')
 
 
 # add the pact broker URL to the pytest output if running verbose
@@ -37,7 +33,7 @@ def pytest_report_header(config):
 
 
 def pytest_configure(config):
-    logging.getLogger().handlers = []
+    logging.getLogger('pactman').handlers = []
     logging.basicConfig(format='%(message)s')
     verbosity = config.getoption('verbose')
     if verbosity > 0:
