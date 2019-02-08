@@ -335,8 +335,10 @@ def get_generated_values(input):  # noqa: C901
         return get_generated_values(input.matcher)
     elif isinstance(input, EACHLIKE_CLASSES):
         return [get_generated_values(input.matcher)] * input.minimum
-    elif isinstance(input, TERM_CLASSES):
+    elif isinstance(input, Term):
         return input.generate
+    elif pact_python is not None and isinstance(input, pact_python.Term):
+        return input._generate
     elif isinstance(input, Equals):
         return get_generated_values(input.matcher)
     elif isinstance(input, Includes):
