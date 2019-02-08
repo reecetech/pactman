@@ -541,6 +541,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.12.1
+
+- Fix pact-python Term compatibility
+
 2.12.0
 
 - Add `Equals` and `Includes` matchers for pact v3+
