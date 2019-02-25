@@ -36,12 +36,12 @@ class Interaction:
     def __str__(self):
         return f"{self.pact.consumer} with request '{self.description}'"
 
-    def verify(self, service_url, setup_url):
+    def verify(self, service_url, setup_url, custom_headers=False):
         self.result.start(self)
         try:
-            self.set_provider_state_with_url(setup_url)
+            self.set_provider_state_with_url(setup_url, custom_headers=custom_headers)
             if self.result.success:
-                self.result.success = self.run_service(service_url)
+                self.result.success = self.run_service(service_url, custom_headers=custom_headers)
         finally:
             self.result.end()
 
@@ -56,55 +56,77 @@ class Interaction:
         finally:
             self.result.end()
 
-    def run_service(self, service_url):
+    def run_service(self, service_url, custom_headers=False):
         method = self.request['method'].upper()
         handler = getattr(self, f'service_{method}', None)
         if handler is None:
             return self.result.fail(f'Request method {method} not implemented in verifier')
-        return handler(service_url)
+        return handler(service_url, custom_headers=custom_headers)
 
-    def service_GET(self, service_url):
+    def service_GET(self, service_url, custom_headers={}):
+        these_headers = self._request_headers
+        if custom_headers:
+            these_headers.update(custom_headers)
         if 'query' in self.request:
             query = self.request['query']
             if isinstance(query, str):
                 # version 2 spec used strings, version 3 uses objects
                 query = parse_qs(query)
-            r = requests.get(self._get_url(service_url), params=query, headers=self._request_headers)
+            r = requests.get(self._get_url(service_url), params=query, headers=these_headers)
         else:
-            r = requests.get(self._get_url(service_url), headers=self._request_headers)
+            r = requests.get(self._get_url(service_url), headers=these_headers)
         return self.response.verify(r)
 
-    def service_HEAD(self, service_url):
+    def service_HEAD(self, service_url, custom_headers={}):
+        these_headers = self._request_headers
+        if custom_headers:
+            these_headers.update(custom_headers)
         if 'query' in self.request:
             query = self.request['query']
             if isinstance(query, str):
                 # version 2 spec used strings, version 3 uses objects
                 query = parse_qs(query)
-            r = requests.head(self._get_url(service_url), params=query, headers=self._request_headers)
+            r = requests.head(self._get_url(service_url), params=query,
+                              headers=these_headers)
         else:
-            r = requests.head(self._get_url(service_url), headers=self._request_headers)
+            r = requests.head(self._get_url(service_url), headers=these_headers)
         return self.response.verify(r)
 
-    def service_POST(self, service_url):
+    def service_POST(self, service_url, custom_headers={}):
+        these_headers = self._request_headers
+        if custom_headers:
+            these_headers.update(custom_headers)
         if not self._content_type_json:
             return self.result.fail(f'POST content type {self._content_type} not implemented in verifier')
-        r = requests.post(self._get_url(service_url), json=self._request_payload, headers=self._request_headers)
+        r = requests.post(self._get_url(service_url), json=self._request_payload,
+                          headers=these_headers)
         return self.response.verify(r)
 
-    def service_DELETE(self, service_url):
-        r = requests.delete(self._get_url(service_url), headers=self._request_headers)
+    def service_DELETE(self, service_url, custom_headers={}):
+        these_headers = self._request_headers
+        if custom_headers:
+            these_headers.update(custom_headers)
+        r = requests.delete(self._get_url(service_url), headers=these_headers)
         return self.response.verify(r)
 
-    def service_PUT(self, service_url):
+    def service_PUT(self, service_url, custom_headers={}):
+        these_headers = self._request_headers
+        if custom_headers:
+            these_headers.update(custom_headers)
         if not self._content_type_json:
             return self.result.fail(f'PUT content type {self._content_type} not implemented in verifier')
-        r = requests.put(self._get_url(service_url), json=self._request_payload, headers=self._request_headers)
+        r = requests.put(self._get_url(service_url), json=self._request_payload,
+                         headers=these_headers)
         return self.response.verify(r)
 
-    def service_PATCH(self, service_url):
+    def service_PATCH(self, service_url, custom_headers={}):
+        these_headers = self._request_headers
+        if custom_headers:
+            these_headers.update(custom_headers)
         if not self._content_type_json:
             return self.result.fail(f'PATCH content type {self._content_type} not implemented in verifier')
-        r = requests.patch(self._get_url(service_url), json=self._request_payload, headers=self._request_headers)
+        r = requests.patch(self._get_url(service_url), json=self._request_payload,
+                           headers=these_headers)
         return self.response.verify(r)
 
     def set_provider_state(self, provider_setup):
@@ -124,22 +146,30 @@ class Interaction:
             else:
                 log.info(f'Using provider state {name}')
 
-    def set_provider_state_with_url(self, setup_url):
+    def set_provider_state_with_url(self, setup_url, custom_headers=False):
         if self.providerState is not None:
-            return self.set_versioned_provider_state(setup_url, 'state', self.providerState)
+            return self.set_versioned_provider_state(setup_url, 'state', self.providerState,
+                                                     custom_headers=custom_headers)
         elif self.providerStates is not None:
-            return self.set_versioned_provider_state(setup_url, 'states', self.providerStates)
+            return self.set_versioned_provider_state(setup_url, 'states', self.providerStates,
+                                                     custom_headers=custom_headers)
         return True
 
-    def set_versioned_provider_state(self, setup_url, var, state):
+    def set_versioned_provider_state(self, setup_url, var, state, custom_headers=False):
         log.debug(f'Setting up provider state {state!r}')
         args = {
-            'provider': self.pact.provider,
-            'consumer': self.pact.consumer,
-            var: state
+            'json': {
+                'provider': self.pact.provider,
+                'consumer': self.pact.consumer,
+                var: state
+            }
         }
+
+        if custom_headers:
+            args.update({'headers': custom_headers})
+
         try:
-            r = requests.post(setup_url, json=args)
+            r = requests.post(setup_url, **args)
         except requests.exceptions.ConnectionError as e:
             try:
                 # try to pull the actual error out of the nested (nested (nested, string-ified))) exception

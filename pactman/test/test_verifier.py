@@ -371,6 +371,58 @@ def test_RequestVerifier_checks_for_missing_headers(mock_pact):
     mock_result.fail.assert_called_with("Request missing header 'X-Custom-Header'")
 
 
+@pytest.mark.parametrize('option, arg', [('providerState', 'state'), ('providerStates', 'states')])
+def test_verify_custom_headers(monkeypatch, mock_pact, mock_result_factory,
+                               fake_interaction, option, arg):
+    monkeypatch.setattr(requests, 'post', Mock(return_value=Mock(status_code=200)))
+    monkeypatch.setattr(requests, 'get', Mock())
+    monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
+    fake_interaction[option] = 'some state'
+
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
+    i.verify('http://provider.example/', 'http://provider.example/pact-setup/',
+             custom_headers={'some_header': 'some_header'})
+
+    requests.post.assert_called_with(
+        'http://provider.example/pact-setup/',
+        json={'provider': "SpamProvider", 'consumer': "SpamConsumer", arg: "some state"},
+        headers={'some_header': "some_header"}
+    )
+
+    requests.get.assert_called_with('http://provider.example/users-service/user/alex',
+                                    headers={'some_header': "some_header"})
+    i.response.verify.assert_called()
+
+
+@pytest.mark.parametrize('option, arg', [('providerState', 'state'), ('providerStates', 'states')])
+def test_verify_custom_headers_put(monkeypatch, mock_pact, mock_result_factory,
+                                   fake_interaction, option, arg):
+
+    monkeypatch.setattr(requests, 'post', Mock(return_value=Mock(status_code=200)))
+    monkeypatch.setattr(requests, 'put', Mock(return_value=Mock(status_code=200)))
+    monkeypatch.setattr(requests, 'get', Mock())
+    monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
+
+    fake_interaction[option] = 'some state'
+    fake_interaction['request']['method'] = 'PUT'
+    fake_interaction['request']['body'] = 'spam'
+
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
+    i.verify('http://provider.example/', 'http://provider.example/pact-setup/',
+             custom_headers={'some_header': 'some_header'})
+
+    requests.post.assert_called_with(
+        'http://provider.example/pact-setup/',
+        json={'provider': "SpamProvider", 'consumer': "SpamConsumer", arg: "some state"},
+        headers={'some_header': "some_header"}
+    )
+
+    requests.put.assert_called_with('http://provider.example/users-service/user/alex',
+                                    headers={'some_header': "some_header"},
+                                    json='spam')
+    i.response.verify.assert_called()
+
+
 class FakeResponse:
     status = 200
     body = None

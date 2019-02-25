@@ -1,3 +1,4 @@
+import os
 import argparse
 import logging
 from functools import partial
@@ -71,6 +72,12 @@ parser.add_argument('-q', '--quiet', default=False, action='store_true',
 
 parser.add_argument('-V', '--version', default=False, action='version', version=f'%(prog)s {__version__}')
 
+parser.add_argument('--custom-provider-header',
+                    default=os.environ.get('CUSTOM_PROVIDER_HEADER', None),
+                    action='append',
+                    help='Header to add to provider state set up and pact verification requests. '
+                         'eg \'Authorization: Basic cGFjdDpwYWN0\'. May be specified multiple times.')
+
 
 class CaptureResult(Result):
     def __init__(self, *, level=logging.WARNING):
@@ -117,6 +124,11 @@ def main():
     init(autoreset=True)
     args = parser.parse_args()
     provider_version = args.provider_version or args.provider_app_version
+    custom_headers = {}
+    for an_input in args.custom_provider_header:
+        k_v = an_input.split(':')
+        custom_headers.update({k_v[0]: k_v[1]})
+
     if args.publish_verification_results and not provider_version:
         print('Provider version is required to publish results to the broker')
         return False
@@ -136,7 +148,7 @@ def main():
         if args.consumer and pact.consumer != args.consumer:
             continue
         for interaction in pact.interactions:
-            interaction.verify(args.provider_url, args.provider_setup_url)
+            interaction.verify(args.provider_url, args.provider_setup_url, custom_headers=custom_headers)
             success = interaction.result.success and success
         if args.publish_verification_results:
             pact.publish_result(provider_version)
