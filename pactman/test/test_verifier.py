@@ -372,8 +372,8 @@ def test_RequestVerifier_checks_for_missing_headers(mock_pact):
 
 
 @pytest.mark.parametrize('option, arg', [('providerState', 'state'), ('providerStates', 'states')])
-def test_verify_custom_headers(monkeypatch, mock_pact, mock_result_factory,
-                               fake_interaction, option, arg):
+def test_provider_state_uses_custom_headers(monkeypatch, mock_pact, mock_result_factory,
+                                            fake_interaction, option, arg):
     monkeypatch.setattr(requests, 'post', Mock(return_value=Mock(status_code=200)))
     monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
@@ -395,12 +395,11 @@ def test_verify_custom_headers(monkeypatch, mock_pact, mock_result_factory,
 
 
 @pytest.mark.parametrize('option, arg', [('providerState', 'state'), ('providerStates', 'states')])
-def test_verify_custom_headers_put(monkeypatch, mock_pact, mock_result_factory,
-                                   fake_interaction, option, arg):
+def test_put_uses_custom_headers(monkeypatch, mock_pact, mock_result_factory,
+                                 fake_interaction, option, arg):
 
     monkeypatch.setattr(requests, 'post', Mock(return_value=Mock(status_code=200)))
     monkeypatch.setattr(requests, 'put', Mock(return_value=Mock(status_code=200)))
-    monkeypatch.setattr(requests, 'get', Mock())
     monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
 
     fake_interaction[option] = 'some state'

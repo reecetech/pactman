@@ -428,6 +428,13 @@ You may also specify the broker URL in the environment variable `PACT_BROKER_URL
 You can pass in a local pact file with `-l`, this will verify the service against the local file instead of the broker:
 
     pactman-verifier -l /tmp/localpact.json <provider name> <provider url> <provider setup url>
+    
+You can use `--custom-provider-header` to pass in headers to be passed to provider state setup and verify calls. it can 
+be used multiple times
+
+    pactman-verifier -b <broker url> --custom-provider-header "someheader:somheader" --custom-provider-header 
+    "this:that" <provider name> <provider url> <provider state url> 
+
 
 
 #### Provider States
