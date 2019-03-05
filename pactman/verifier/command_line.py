@@ -125,9 +125,10 @@ def main():
     args = parser.parse_args()
     provider_version = args.provider_version or args.provider_app_version
     custom_headers = {}
-    for an_input in args.custom_provider_header:
-        k_v = an_input.split(':')
-        custom_headers.update({k_v[0]: k_v[1]})
+    if args.custom_provider_header:
+        for an_input in args.custom_provider_header:
+            k_v = an_input.split(':')
+            custom_headers.update({k_v[0]: k_v[1]})
 
     if args.publish_verification_results and not provider_version:
         print('Provider version is required to publish results to the broker')
