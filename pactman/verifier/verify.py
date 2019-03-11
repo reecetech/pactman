@@ -29,6 +29,7 @@ class Interaction:
         self.providerState = interaction.get('providerState')
         self.providerStates = interaction.get('providerStates')
         self.response = ResponseVerifier(pact, interaction['response'], self.result)
+        self.extra_provider_headers = {}
 
     def __repr__(self):
         return f"<Interaction {self.pact.consumer}:{self.description}>"
@@ -36,7 +37,8 @@ class Interaction:
     def __str__(self):
         return f"{self.pact.consumer} with request '{self.description}'"
 
-    def verify(self, service_url, setup_url):
+    def verify(self, service_url, setup_url, extra_provider_headers={}):
+        self.extra_provider_headers = extra_provider_headers
         self.result.start(self)
         try:
             self.set_provider_state_with_url(setup_url)
@@ -133,13 +135,15 @@ class Interaction:
 
     def set_versioned_provider_state(self, setup_url, var, state):
         log.debug(f'Setting up provider state {state!r}')
-        args = {
+        kwargs = dict(json={
             'provider': self.pact.provider,
             'consumer': self.pact.consumer,
             var: state
-        }
+        })
+        if self.extra_provider_headers:
+            kwargs['headers'] = self.extra_provider_headers
         try:
-            r = requests.post(setup_url, json=args)
+            r = requests.post(setup_url, **kwargs)
         except requests.exceptions.ConnectionError as e:
             try:
                 # try to pull the actual error out of the nested (nested (nested, string-ified))) exception
@@ -161,7 +165,9 @@ class Interaction:
 
     @property
     def _request_headers(self):
-        return self.request.get('headers', {})
+        headers = dict(self.extra_provider_headers)
+        headers.update(self.request.get('headers', {}))
+        return headers
 
     @property
     def _request_payload(self):

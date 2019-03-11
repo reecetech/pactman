@@ -429,6 +429,15 @@ You can pass in a local pact file with `-l`, this will verify the service agains
 
     pactman-verifier -l /tmp/localpact.json <provider name> <provider url> <provider setup url>
 
+You can use `--custom-provider-header` to pass in headers to be passed to provider state setup and verify calls. it can 
+be used multiple times
+
+    pactman-verifier -b <broker url> --custom-provider-header "someheader:value" --custom-provider-header 
+    "this:that" <provider name> <provider url> <provider state url>
+    
+An additional header may also be supplied in the `PROVIDER_EXTRA_HEADER` environment variable, though the command
+line argument(s) would override this.
+
 
 #### Provider States
 
@@ -540,6 +549,10 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+2.13.0
+
+- Add ability to supply additional headers to provider during verification (thanks @ryallsa)
 
 2.12.1
 

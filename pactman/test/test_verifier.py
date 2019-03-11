@@ -371,6 +371,28 @@ def test_RequestVerifier_checks_for_missing_headers(mock_pact):
     mock_result.fail.assert_called_with("Request missing header 'X-Custom-Header'")
 
 
+def test_provider_state_uses_custom_headers(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
+    fake_interaction['request']['headers'] = dict(request_header='value')
+    monkeypatch.setattr(requests, 'post', Mock(return_value=Mock(status_code=200)))
+    monkeypatch.setattr(requests, 'get', Mock())
+    monkeypatch.setattr(ResponseVerifier, 'verify', Mock())
+    fake_interaction['providerStates'] = 'some state'
+
+    i = Interaction(mock_pact('2.0.0'), fake_interaction, mock_result_factory)
+    i.verify('http://provider.example/', 'http://provider.example/pact-setup/',
+             extra_provider_headers={'some_header': 'some_header'})
+
+    requests.post.assert_called_with(
+        'http://provider.example/pact-setup/',
+        json={'provider': "SpamProvider", 'consumer': "SpamConsumer", 'states': "some state"},
+        headers={'some_header': "some_header"}
+    )
+
+    requests.get.assert_called_with('http://provider.example/users-service/user/alex',
+                                    headers={'request_header': 'value', 'some_header': "some_header"})
+    i.response.verify.assert_called()
+
+
 class FakeResponse:
     status = 200
     body = None
