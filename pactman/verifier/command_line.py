@@ -160,7 +160,7 @@ def get_custom_headers(args):
     if args.custom_provider_header:
         for header in args.custom_provider_header:
             k, v = header.split(':')
-            custom_headers.update({k: v.strip()})
+            custom_headers[k] = v.strip()
     return custom_headers
 
 
