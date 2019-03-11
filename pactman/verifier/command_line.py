@@ -158,9 +158,9 @@ def get_log_level(args):
 def get_custom_headers(args):
     custom_headers = {}
     if args.custom_provider_header:
-        for an_input in args.custom_provider_header:
-            k_v = an_input.split(':')
-            custom_headers.update({k_v[0]: k_v[1]})
+        for header in args.custom_provider_header:
+            k, v = header.split(':')
+            custom_headers.update({k: v.strip()})
     return custom_headers
 
 
