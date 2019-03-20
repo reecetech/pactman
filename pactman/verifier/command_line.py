@@ -54,6 +54,10 @@ parser.add_argument('-l', '--local-pact-file', default=None,
 parser.add_argument('-c', '--consumer', default=None,
                     help='the name of the consumer to test')
 
+parser.add_argument('--custom-provider-header', metavar='PROVIDER_EXTRA_HEADER', action='append',
+                    help='Header to add to provider state set up and pact verification requests. '
+                         'eg "Authorization: Basic cGFjdDpwYWN0". May be specified multiple times.')
+
 parser.add_argument('-r', '--publish-verification-results', default=False, action='store_true',
                     help='send verification results to the pact broker')
 
@@ -117,15 +121,11 @@ def main():
     init(autoreset=True)
     args = parser.parse_args()
     provider_version = args.provider_version or args.provider_app_version
+    custom_headers = get_custom_headers(args)
     if args.publish_verification_results and not provider_version:
         print('Provider version is required to publish results to the broker')
         return False
-    if args.quiet:
-        result_log_level = logging.WARNING
-    elif args.verbose:
-        result_log_level = logging.DEBUG
-    else:
-        result_log_level = logging.INFO
+    result_log_level = get_log_level(args)
     result_factory = partial(CaptureResult, level=result_log_level)
     if args.local_pact_file:
         pacts = [BrokerPact.load_file(args.local_pact_file, result_factory)]
@@ -136,13 +136,32 @@ def main():
         if args.consumer and pact.consumer != args.consumer:
             continue
         for interaction in pact.interactions:
-            interaction.verify(args.provider_url, args.provider_setup_url)
+            interaction.verify(args.provider_url, args.provider_setup_url, extra_provider_headers=custom_headers)
             success = interaction.result.success and success
         if args.publish_verification_results:
             pact.publish_result(provider_version)
         else:
             print()
     return int(not success)
+
+
+def get_log_level(args):
+    if args.quiet:
+        result_log_level = logging.WARNING
+    elif args.verbose:
+        result_log_level = logging.DEBUG
+    else:
+        result_log_level = logging.INFO
+    return result_log_level
+
+
+def get_custom_headers(args):
+    custom_headers = {}
+    if args.custom_provider_header:
+        for header in args.custom_provider_header:
+            k, v = header.split(':')
+            custom_headers[k] = v.strip()
+    return custom_headers
 
 
 if __name__ == '__main__':
