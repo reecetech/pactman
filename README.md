@@ -550,6 +550,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.14.0
+
+- Improve verbose messages to clarify what they're saying.
+
 2.13.0
 
 - Add ability to supply additional headers to provider during verification (thanks @ryallsa)

@@ -1,0 +1,14 @@
+{
+  "match": false,
+  "comment": "want an empty array but received a full one",
+  "expected": {
+    "headers": {"Content-Type": "application/json"},
+    "body": []
+  },
+  "actual": {
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": ["a", "b", "c"]
+  }
+}

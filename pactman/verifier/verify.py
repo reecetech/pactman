@@ -234,12 +234,12 @@ class ResponseVerifier:
 
         if self.body is not MISSING:
             if not self.check_rules(response.json(), self.body, ['body']):
-                log.info(f'{self.interaction_name} data: {response.json()}')
+                log.info(f'{self.interaction_name} data was: {response.json()}')
                 return False
         return True
 
     def check_rules(self, data, spec, path):
-        log.debug(f'check_rules {data!r} {spec!r} {path}')
+        log.debug(f'check_rules data={data!r} spec={spec!r} path={format_path(path)}')
         if self.matching_rules:
             # if we have matchingRules then just look at those things
             r = self.apply_rules(data, spec, path)
@@ -255,7 +255,7 @@ class ResponseVerifier:
     def compare_header(self, data, spec, path):
         parsed_data = sorted(parse_header(data))
         parsed_spec = sorted(parse_header(spec))
-        log.debug(f'compare_header {parsed_data} {parsed_spec}')
+        log.debug(f'compare_header data={parsed_data} spec={parsed_spec}')
         if parsed_data == parsed_spec:
             return True
 
@@ -281,7 +281,7 @@ class ResponseVerifier:
         return True
 
     def compare(self, data, spec, path):
-        log.debug(f'compare {data!r} {spec!r} {path}')
+        log.debug(f'compare data={data!r} spec={spec!r} path={format_path(path)}')
         if fold_type(spec) is list:
             return self.compare_list(data, path, spec)
         if fold_type(spec) is dict:
@@ -371,7 +371,7 @@ class ResponseVerifier:
             return weighted_rule
 
     def apply_rules_array(self, data, spec, path):
-        log.debug(f'apply_rules_array {data!r} {spec!r} {path!r}')
+        log.debug(f'apply_rules_array data={data!r} spec={spec!r} path={format_path(path)}')
         if fold_type(data) is not list:
             return self.result.fail(f'{self.interaction_name} element is not an array (is {nice_type(data)})', path)
 
@@ -413,7 +413,7 @@ class ResponseVerifier:
         return self.apply_rules(data, spec, path)
 
     def apply_rules_dict(self, data, spec, path):
-        log.debug(f'apply_rules_dict {data!r} {spec!r} {path!r}')
+        log.debug(f'apply_rules_dict data={data!r} spec={spec!r} path={format_path(path)}')
         if fold_type(data) is not dict:
             return self.result.fail(f'{self.interaction_name} element is not an object (is {nice_type(data)})', path)
         for k in spec:
