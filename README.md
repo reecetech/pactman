@@ -555,6 +555,7 @@ From there you can use pip to install it:
 
 - Fix structure of serialisation for header matching rules.
 - Add `"never"` to the `file_write_mode` options.
+- Handle x-www-form-urlencoded POST request bodies.
 
 2.14.0
 
