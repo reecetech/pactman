@@ -58,7 +58,8 @@ class PactRequestHandler:
         if not result.success:
             return self.handle_failure(result.reason)
         self.handle_success(interaction)
-        self.write_pact(interaction)
+        if self.pact.file_write_mode != 'never':
+            self.write_pact(interaction)
         return self.respond_for_interaction(interaction)
 
     def get_interaction(self, path):

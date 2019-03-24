@@ -204,10 +204,13 @@ class ResponseVerifier:
             self.matching_rules = rule_matchers_v3(rules)
         self.result = result
 
-    def verify(self, response):
-        log.debug(f'Verifying Response: request headers={rules_present(self.headers)}, '
-                  f'request body={rules_present(self.body)}, '
+    def log_context(self):
+        log.debug(f'Verifying v{self.pact.semver["major"]} Response: status={self.status}, '
+                  f'headers={rules_present(self.headers)}, body={rules_present(self.body)}, '
                   f'matching rules={"present" if self.matching_rules != {} else "absent"}')
+
+    def verify(self, response):
+        self.log_context()
         if self.status is not MISSING and response.status_code != self.status:
             log.debug(f'.. response {response.text}')
             return self.result.fail(f'{self.interaction_name} status code {response.status_code} is not '
@@ -435,9 +438,13 @@ class RequestVerifier(ResponseVerifier):
         self.query = interaction.get('query', MISSING)
         super().__init__(pact, interaction, result)
 
+    def log_context(self):
+        log.debug(f'Verifying v{self.pact.semver["major"]} Request: method={self.method}, '
+                  f'path={rules_present(self.path)}, query={rules_present(self.query)}, '
+                  f'headers={rules_present(self.headers)}, body={rules_present(self.body)}, '
+                  f'matching rules={"present" if self.matching_rules != {} else "absent"}')
+
     def verify(self, request):
-        log.debug(f'Verifying Request: request method={rules_present(self.method)}, '
-                  f'request path={rules_present(self.path)}, query={rules_present(self.query)}')
         if self.method is not MISSING and request.method.lower() != self.method.lower():
             return self.result.fail(f'Request method {request.method!r} does not match expected {self.method!r}')
         if self.path is not MISSING:
@@ -474,4 +481,4 @@ class RequestVerifier(ResponseVerifier):
         return True
 
 
-MISSING = object()
+MISSING = 'MISSING'

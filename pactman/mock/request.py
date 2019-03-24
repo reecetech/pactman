@@ -51,7 +51,6 @@ class Request:
 
         if matchingRules:
             request['matchingRules'] = matchingRules
-
         return request
 
     def generate_v2_matchingRules(self):
@@ -65,7 +64,7 @@ class Request:
     def generate_v3_matchingRules(self):
         # TODO check there's generation *and* verification tests for all these
         matchingRules = get_matching_rules_v3(self.path, 'path')
-        matchingRules.update(get_matching_rules_v3(self.headers, 'headers'))
+        matchingRules.update(split_header_paths(get_matching_rules_v3(self.headers, 'headers')))
 
         # body and query rules look different
         body_rules = get_matching_rules_v3(self.body, '$')
@@ -94,3 +93,15 @@ def expand_query_rules(rules):
         if not rule_param:
             rule_param = '*'
         rules[rule_param] = matchers
+
+
+def split_header_paths(rules):
+    # Header rules in v3 pacts are stored differently to other types - in a single object called "header"
+    # with a sub key per header.
+    if not rules:
+        return {}
+    result = dict(header={})
+    for k in rules:
+        header = k.split('.')[1]
+        result['header'][header] = rules[k]
+    return result

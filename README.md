@@ -183,7 +183,8 @@ pact = Consumer('Consumer').has_pact_with(Provider('Provider'), version='3.0.0')
 
 `file_write_mode` defaults to `"overwrite"` and should be that or `"merge"`. Overwrite ensures
 that any existing pact file will be removed when `has_pact_with()` is invoked. Merge will retain
-the pact file and add new pacts to that file. See [writing multiple pacts](#writing-multiple-pacts)
+the pact file and add new pacts to that file. See [writing multiple pacts](#writing-multiple-pacts).
+If you absolutely do not want pact files to be written, use `"never"`. 
 
 `use_mocking_server` defaults to `False` and controls the mocking method used by `pactman`. The default is to
 patch `urllib3`, which is the library underpinning `requests` and is also used by some other projects. If you
@@ -549,6 +550,11 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+2.15.0
+
+- Fix structure of serialisation for header matching rules.
+- Add `"never"` to the `file_write_mode` options.
 
 2.14.0
 
