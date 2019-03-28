@@ -108,8 +108,7 @@ class Pact(object):
         self.use_mocking_server = use_mocking_server
         self._interactions = []
         self._mock_handler = None
-
-        self.check_existing_file()
+        self._pact_dir_checked = False
 
     @property
     def uri(self):
@@ -126,6 +125,9 @@ class Pact(object):
         # ensure destination directory exists
         if self.file_write_mode == 'never':
             return
+        if self._pact_dir_checked:
+            return
+        self._pact_dir_checked = True
         ensure_pact_dir(self.pact_dir)
         if self.file_write_mode == 'overwrite':
             if os.path.exists(self.pact_json_filename):
@@ -133,6 +135,7 @@ class Pact(object):
 
     @property
     def pact_json_filename(self):
+        self.check_existing_file()
         return os.path.join(self.pact_dir, f'{self.consumer.name}-{self.provider.name}-pact.json')
 
     def given(self, provider_state, **params):

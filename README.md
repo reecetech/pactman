@@ -562,6 +562,11 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.16.0
+
+- Delay shenanigans around checking pacts directory until pacts are actually written
+  to allow module-level pact definition without side effects.
+
 2.15.0
 
 - Fix structure of serialisation for header matching rules.
