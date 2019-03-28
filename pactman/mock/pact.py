@@ -124,6 +124,8 @@ class Pact(object):
 
     def check_existing_file(self):
         # ensure destination directory exists
+        if self.file_write_mode == 'never':
+            return
         ensure_pact_dir(self.pact_dir)
         if self.file_write_mode == 'overwrite':
             if os.path.exists(self.pact_json_filename):

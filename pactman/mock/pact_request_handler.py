@@ -46,11 +46,7 @@ class PactRequestHandler:
         url_parts = urllib.parse.urlparse(self.path)
 
         interaction = self.get_interaction(url_parts.path)
-
-        if self.body:
-            body = json.loads(self.body)
-        else:
-            body = ''
+        body = self.get_body()
 
         request = Request(method, url_parts.path, url_parts.query, self.headers, body)
         result = RecordResult()
@@ -58,8 +54,25 @@ class PactRequestHandler:
         if not result.success:
             return self.handle_failure(result.reason)
         self.handle_success(interaction)
-        self.write_pact(interaction)
+        if self.pact.file_write_mode != 'never':
+            self.write_pact(interaction)
         return self.respond_for_interaction(interaction)
+
+    def get_body(self):
+        if not self.body:
+            return ''
+        content_type = [self.headers[h] for h in self.headers if h.lower() == 'content-type']
+        if content_type:
+            content_type = content_type[0]
+        else:
+            # default content type for pacts
+            content_type = 'application/json'
+
+        if content_type == 'application/json':
+            return json.loads(self.body)
+        elif content_type == 'application/x-www-form-urlencoded':
+            return urllib.parse.parse_qs(self.body)
+        raise ValueError(f'Unhandled body content type {content_type}')
 
     def get_interaction(self, path):
         raise NotImplementedError()
