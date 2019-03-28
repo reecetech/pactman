@@ -30,9 +30,10 @@ it, `pactman` allows a much nicer usage like:
 import requests
 from pactman import Consumer, Provider
 
+pact = Consumer('Consumer').has_pact_with(Provider('Provider'))
+
 def test_interaction():
-    pact = Consumer('Consumer').has_pact_with(Provider('Provider')) \
-        .given("some data exists").upon_receiving("a request") \
+    pact.given("some data exists").upon_receiving("a request") \
         .with_request("get", "/", query={"foo": ["bar"]}).will_respond_with(200)
     with pact:
         requests.get(pact.uri, params={"foo": ["bar"]})
@@ -83,6 +84,7 @@ Then `Consumer`'s contract test might look something like this:
 import unittest
 from pactman import Consumer, Provider
 
+pact = Consumer('Consumer').has_pact_with(Provider('Provider'))
 
 class GetUserInfoContract(unittest.TestCase):
   def test_get_user(self):
@@ -92,7 +94,7 @@ class GetUserInfoContract(unittest.TestCase):
       'groups': ['Editors']
     }
 
-    Consumer('Consumer').has_pact_with(Provider('Provider')).given(
+    pact.given(
         'UserA exists and is not an administrator'
     ).upon_receiving(
         'a request for UserA'
@@ -138,6 +140,20 @@ try:
 finally:
     pact.verify()
 ```
+
+### An important not about pact relationship definition
+
+You may have noticed that the pact relationship is defined at the module level in our
+examples:
+
+```python
+pact = Consumer('Consumer').has_pact_with(Provider('Provider'))
+```
+
+This is because it *must only be done once* per test suite. By default the pact file is
+cleared out when that relationship is defined, so if you define it more than once per test
+suite you'll end up only storing the *last* pact declared per relationship. For more on this
+subject, see [writing multiple pacts](#writing-multiple-pacts).
 
 ### Requests
 
@@ -221,6 +237,7 @@ relationship. `pactman` will manage the pact file as follows:
   pact file.
 
 ### Some words about given()
+
 You use `given()` to indicate to the provider that they should have some state in order to
 be able to satisfy the interaction. You should agree upon the state and its specification
 in discussion with the provider.
@@ -274,7 +291,6 @@ When you run the tests for the consumer, the mock will return the data you provi
 as `sample_data`, in this case `'Sample spamming content'`. When the contract is verified on the
 provider, the data returned from the real provider service will be verified to ensure it
 contains the `matcher` string.
-
 
 ### Term(matcher, sample_data)
 Asserts the value should match the given regular expression. You could use this
@@ -391,7 +407,6 @@ Like({
 })
 ```
 
-
 ### Body payload rules
 The `body` payload is assumed to be JSON data. In the absence of a `Content-Type` header
 we assume `Content-Type: application/json; charset=UTF-8` (JSON text is Unicode and the
@@ -417,7 +432,6 @@ You have two options for verifying pacts against a service you created:
 2. Use the `pytest` support built into pactman to replay the pacts as test cases, allowing
    use of other testing mechanisms such as mocking and transaction control.
 
-
 ### Using `pactman-verifier`
 
 Run `pactman-verifier -h` to see the options available. To run all pacts registered to a provider in a [Pact Broker]:
@@ -439,7 +453,6 @@ be used multiple times
 An additional header may also be supplied in the `PROVIDER_EXTRA_HEADER` environment variable, though the command
 line argument(s) would override this.
 
-
 #### Provider States
 
 In many cases, your contracts will need very specific data to exist on the provider
@@ -459,7 +472,6 @@ on the provider application or a separate one. Some strategies for managing stat
 - A standalone application that can start and stop the other server with different datastore states
 
 For more information about provider states, refer to the [Pact documentation] on [Provider States].
-
 
 ### Verifying Pacts Using `pytest`
 
@@ -492,7 +504,6 @@ def test_pacts(live_server, pact_verifier):
 
 The test function may do any level of mocking and data setup using standard pytest fixtures - so mocking
 downstream APIs or other interactions within the provider may be done with standard monkeypatching.
-
 
 #### Provider states using `pytest`
 
