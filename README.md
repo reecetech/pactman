@@ -562,6 +562,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.17.0
+
+- Handle absence of any provider state (!) in pytest setup.
+
 2.16.0
 
 - Delay shenanigans around checking pacts directory until pacts are actually written
