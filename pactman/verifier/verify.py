@@ -114,6 +114,9 @@ class Interaction:
             log.debug(f'Setting up provider state {self.providerState!r}')
             provider_setup(self.providerState)
             return
+        if self.providerStates is None:
+            log.debug(f'No provider state specified!')
+            return
         for state in self.providerStates:
             if 'name' not in state:
                 raise KeyError(f'provider state missing "name": {state}')
