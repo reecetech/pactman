@@ -562,6 +562,10 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.18.0
+
+- Correct bug in cleanup that resulted in urllib mocking breaking.
+
 2.17.0
 
 - Handle absence of any provider state (!) in pytest setup.

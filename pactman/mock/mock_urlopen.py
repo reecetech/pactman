@@ -13,7 +13,7 @@ _providers = {}
 log = logging.getLogger(__name__)
 
 
-class MockPool:
+class MockConnectionPool(urllib3.connectionpool.HTTPConnectionPool):
     mocks = {}
 
     @classmethod
@@ -24,8 +24,6 @@ class MockPool:
     def remove_mock(cls, mock):
         del cls.mocks[mock.pact.port]
 
-
-class MockConnectionPool(urllib3.connectionpool.HTTPConnectionPool, MockPool):
     def urlopen(self, method, url, body=None, headers=None, *args, **kwargs):
         if self.port not in self.mocks:
             return super().urlopen(method, url, body, headers, *args, **kwargs)
@@ -35,16 +33,15 @@ class MockConnectionPool(urllib3.connectionpool.HTTPConnectionPool, MockPool):
 class MonkeyPatcher:
     def __init__(self):
         self.patched = False
-        self.handlers = {}
 
     def add_service(self, handler):
-        MockPool.add_mock(handler)
+        MockConnectionPool.add_mock(handler)
         if not self.patched:
             self.patch()
 
     def remove_service(self, handler):
-        MockPool.remove_mock(handler)
-        if not self.handlers:
+        MockConnectionPool.remove_mock(handler)
+        if not MockConnectionPool.mocks:
             self.clear()
 
     def patch(self):
