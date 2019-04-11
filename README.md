@@ -562,6 +562,11 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.19.0
+
+- Correct teardown of pact context manager where the pact is used in multiple
+  interactions (`with interaction1, interaction2` instead of `with pact`).
+
 2.18.0
 
 - Correct bug in cleanup that resulted in urllib mocking breaking.

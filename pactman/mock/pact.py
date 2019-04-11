@@ -109,6 +109,7 @@ class Pact(object):
         self._interactions = []
         self._mock_handler = None
         self._pact_dir_checked = False
+        self._enter_count = 0
 
     @property
     def uri(self):
@@ -320,6 +321,7 @@ class Pact(object):
             self.start_mocking()
 
         self.setup()
+        self._enter_count += 1
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
@@ -328,7 +330,14 @@ class Pact(object):
         Calls the mock service to verify that all interactions occurred as
         expected, and has it write out the contracts to disk.
         """
+        self._enter_count -= 1
+
         if (exc_type, exc_val, exc_tb) != (None, None, None):
+            # let the exception go through to the keeper
+            return
+
+        # don't invoke teardown until all interactions for this pact are exited
+        if self._enter_count:
             return
 
         self.verify()
