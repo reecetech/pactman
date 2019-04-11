@@ -1,5 +1,6 @@
 import os
 import tempfile
+import requests
 from unittest import TestCase
 from unittest.mock import call, patch
 
@@ -235,3 +236,12 @@ class PactContextManagerTestCase(PactTestCase):
 
         self.mock_setup.assert_called_once_with(pact)
         self.assertFalse(self.mock_verify.called)
+
+
+def test_multiple_pacts_dont_break_during_teardown():
+    # ensure teardown is only done on when all pacts __exit__
+    pact = Pact(Consumer('Consumer'), Provider('Provider'))
+    p1 = pact.given('given').upon_receiving('when').with_request('GET', '/path').will_respond_with(201)
+    p2 = pact.given('given2').upon_receiving('when2').with_request('GET', '/path2').will_respond_with(201)
+    with p1, p2:
+        requests.get(p1.uri + '/path')
