@@ -395,8 +395,7 @@ class ResponseVerifier:
         log.debug('iterating elements, looking for rules')
         for index, data_elem in enumerate(data):
             if not self.apply_rules_array_element(data_elem, spec, path + [index], index):
-                log.debug(f'apply_rules_array {path!r} failing on item {index}')
-                return False
+                return self.result.fail(f'apply_rules_array {path!r} failing on item {index}')
         log.debug(f'apply_rules_array {path!r} success=True')
         return True
 

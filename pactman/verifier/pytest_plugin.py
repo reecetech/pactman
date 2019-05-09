@@ -15,6 +15,8 @@ def pytest_addoption(parser):
                      help="pact broker URL")
     parser.addoption("--pact-provider-name", default=None,
                      help="provider pact name")
+    parser.addoption("--pact-consumer-name", default=None,
+                     help="consumer to limit verification to")
     parser.addoption("--pact-publish-results", action="store_true", default=False,
                      help="report pact results to pact broker")
     parser.addoption("--pact-provider-version", default=None,
@@ -93,8 +95,11 @@ def pytest_generate_tests(metafunc):
             if not provider_name:
                 raise ValueError('--pact-broker-url requires the --pact-provider-name option')
             broker_pacts = BrokerPacts(provider_name, pact_broker_url=broker_url, result_factory=PytestResult)
-            metafunc.parametrize("pact_verifier", flatten_pacts(broker_pacts.consumers()),
-                                 ids=test_id, indirect=True)
+            pacts = broker_pacts.consumers()
+            filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
+            if filter_consumer_name:
+                pacts = [pact for pact in pacts if pact.consumer == filter_consumer_name]
+            metafunc.parametrize("pact_verifier", flatten_pacts(pacts), ids=test_id, indirect=True)
 
 
 @pytest.fixture()
