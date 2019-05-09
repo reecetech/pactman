@@ -522,7 +522,8 @@ Once you have written the pytest code, you need to invoke pytest with additional
 
 `--pact-broker-url=<URL>` provides the base URL of the Pact broker to retrieve pacts from for the
 provider. You must also provide `--pact-provider-name=<ProviderName>` to identify which provider to
-retrieve pacts for from the broker.
+retrieve pacts for from the broker. You may provider `--pact-consumer-name=<ConsumerName>` to limit
+the pacts verified to just that consumer.
 
 `--pact-files=<file pattern>` verifies some on-disk pact JSON files identified by the wildcard pattern
 (unix glob pattern matching).
@@ -561,6 +562,11 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+2.20.0
+
+- Fix pytest mode to correctly detect array element rule failure as a pytest failure
+- Allow restricting pytest verification runs to a single consumer using --pact-consumer-name
 
 2.19.0
 
