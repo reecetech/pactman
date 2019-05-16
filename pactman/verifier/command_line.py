@@ -2,12 +2,11 @@ import argparse
 import logging
 from functools import partial
 
-from colorama import Fore, Style, init
+from colorama import init
 
 from ..__version__ import __version__
-from .broker_pact import BrokerPact, BrokerPacts, log
-from .paths import format_path
-from .result import Result
+from .broker_pact import BrokerPact, BrokerPacts
+from .result import CaptureResult
 
 # TODO: add these options, which exist in the ruby command line?
 '''
@@ -74,47 +73,6 @@ parser.add_argument('-q', '--quiet', default=False, action='store_true',
                     help='output less information about the verification')
 
 parser.add_argument('-V', '--version', default=False, action='version', version=f'%(prog)s {__version__}')
-
-
-class CaptureResult(Result):
-    def __init__(self, *, level=logging.WARNING):
-        self.messages = []
-        self.level = level
-        self.current_consumer = None
-
-    def start(self, interaction):
-        super().start(interaction)
-        log = logging.getLogger('pactman')
-        log.handlers = [self]
-        log.setLevel(logging.DEBUG)
-        self.messages[:] = []
-        if self.current_consumer != interaction.pact.consumer:
-            print(f'{Style.BRIGHT}Consumer: {interaction.pact.consumer}')
-            self.current_consumer = interaction.pact.consumer
-        print(f'Request: "{interaction.description}" ... ', end='')
-
-    def end(self):
-        if self.success:
-            print(Fore.GREEN + 'PASSED')
-        else:
-            print(Fore.RED + 'FAILED')
-        if self.messages:
-            print((Fore.RESET + '\n').join(self.messages))
-
-    def fail(self, message, path=None):
-        self.success = self.FAIL
-        if path:
-            message += ' at ' + format_path(path)
-        log.error(message)
-        return not message
-
-    def handle(self, record):
-        color = ''
-        if record.levelno >= logging.ERROR:
-            color = Fore.RED
-        elif record.levelno >= logging.WARNING:
-            color = Fore.YELLOW
-        self.messages.append(' ' + color + record.msg)
 
 
 def main():

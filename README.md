@@ -563,6 +563,14 @@ From there you can use pip to install it:
 
 ## Release History
 
+2.22.0
+
+- Better implementation of change in 2.21.0
+
+2.21.0
+
+- Handle warning level messages in command line output handler
+
 2.20.0
 
 - Fix pytest mode to correctly detect array element rule failure as a pytest failure
