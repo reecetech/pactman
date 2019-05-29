@@ -141,7 +141,7 @@ finally:
     pact.verify()
 ```
 
-### An important not about pact relationship definition
+### An important note about pact relationship definition
 
 You may have noticed that the pact relationship is defined at the module level in our
 examples:
@@ -184,7 +184,7 @@ You can define exact values for your expected request like the examples above,
 or you can use the matchers defined later to assist in handling values that are
 variable.
 
-### Some important has_pact_with options
+### Some important has_pact_with() options()
 
 The `has_pact_with(provider...)` call has quite a few options documented in its API, but a couple are
 worth mentioning in particular:
@@ -412,7 +412,7 @@ The `body` payload is assumed to be JSON data. In the absence of a `Content-Type
 we assume `Content-Type: application/json; charset=UTF-8` (JSON text is Unicode and the
 default encoding is UTF-8).
 
-During verification non-JSON payloads are compared for equality
+During verification non-JSON payloads are compared for equality.
 
 During mocking, the HTTP response will be handled as:
 
