@@ -17,28 +17,48 @@ def pact_id(param):
     return repr(param)
 
 
-class BrokerPacts:
-    def __init__(self, provider_name, pact_broker_url=None, result_factory=LoggedResult):
-        self.provider_name = provider_name
-        self.pact_broker_url = pact_broker_url or os.environ.get('PACT_BROKER_URL')
-        if not self.pact_broker_url:
+class PactBrokerConfig:
+    def __init__(self, url=None, token=None):
+        url = url or os.environ.get('PACT_BROKER_URL')
+        if not url:
             raise ValueError('pact broker URL must be specified')
-        self.result_factory = result_factory
+
+        # pull the hostname and optionally any basic auth from the broker URL
+        # (backwards compat to once upon a time when the broker config URL was specified with a path)
+        url_parts = urllib.parse.urlparse(url)
+        host = netloc = url_parts.netloc
+        self.auth = None
+        if '@' in netloc:
+            url_auth, host = netloc.split('@')
+            self.auth = tuple(url_auth.split(':'))
+        self.url = f'{url_parts.scheme}://{host}/'
+
+        if not self.auth:
+            auth = os.environ.get('PACT_BROKER_AUTH')
+            if auth:
+                self.auth = tuple(auth.split(':'))
+
+        token = token or os.environ.get('PACT_BROKER_TOKEN')
+        self.headers = None
+        if token:
+            self.headers = {'Authorization': f'Bearer {token}'}
 
     def get_broker_navigator(self):
-        # TODO: remove the manipulation of the URL to allow broker URLs with path components at the root
-        # (this manipulation is here as an interim measure for older usages which specified a more complex
-        # pact broker URL pointing to a different resource)
-        url_parts = urllib.parse.urlparse(self.pact_broker_url)
-        url = f'{url_parts.scheme}://{url_parts.netloc}/'
-        return Navigator.hal(url, default_curie='pb')
+        return Navigator.hal(self.url, default_curie='pb', auth=self.auth, headers=self.headers)
+
+
+class BrokerPacts:
+    def __init__(self, provider_name, pact_broker_config=None, result_factory=LoggedResult):
+        self.provider_name = provider_name
+        self.pact_broker_config = pact_broker_config or PactBrokerConfig()
+        self.result_factory = result_factory
 
     def consumers(self):
-        nav = self.get_broker_navigator()
+        nav = self.pact_broker_config.get_broker_navigator()
         try:
             broker_provider = nav['latest-provider-pacts'](provider=self.provider_name)
         except Exception as e:
-            raise ValueError(f'error fetching pacts from {self.pact_broker_url} for {self.provider_name}: {e}')
+            raise ValueError(f'error fetching pacts from {self.pact_broker_config.url} for {self.provider_name}: {e}')
         broker_provider.fetch()
         for broker_pact in broker_provider['pacts']:
             pact_contents = broker_pact.fetch()
