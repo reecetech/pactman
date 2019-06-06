@@ -438,8 +438,6 @@ Run `pactman-verifier -h` to see the options available. To run all pacts registe
 
     pactman-verifier -b http://pact-broker.example/ <provider name> <provider url> <provider setup url>
 
-You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
-
 You can pass in a local pact file with `-l`, this will verify the service against the local file instead of the broker:
 
     pactman-verifier -l /tmp/localpact.json <provider name> <provider url> <provider setup url>
@@ -452,6 +450,19 @@ be used multiple times
     
 An additional header may also be supplied in the `PROVIDER_EXTRA_HEADER` environment variable, though the command
 line argument(s) would override this.
+
+#### Pact Broker Configuration
+
+You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
+
+If HTTP Basic Auth is required for the broker, that may be provided in the URL:
+ 
+    pactman-verifier -b http://user:password@pact-broker.example/ ...
+
+or set in the `PACT_BROKER_AUTH` environment variable as `user:password`.
+
+If your broker needs a bearer token then you may provide that on the command line or set it in the
+environment variable `PACT_BROKER_TOKEN`.
 
 #### Provider States
 
@@ -523,7 +534,10 @@ Once you have written the pytest code, you need to invoke pytest with additional
 `--pact-broker-url=<URL>` provides the base URL of the Pact broker to retrieve pacts from for the
 provider. You must also provide `--pact-provider-name=<ProviderName>` to identify which provider to
 retrieve pacts for from the broker. You may provider `--pact-consumer-name=<ConsumerName>` to limit
-the pacts verified to just that consumer.
+the pacts verified to just that consumer. As with the command-line verifier, you may provide basic
+auth details in the broker URL, or through the `PACT_BROKER_AUTH` environment variable. If your broker
+requires a bearer token you may provide it with `--pact-broker-token=<TOKEN>` or the `PACT_BROKER_TOKEN`
+environment variable.
 
 `--pact-files=<file pattern>` verifies some on-disk pact JSON files identified by the wildcard pattern
 (unix glob pattern matching).
@@ -562,6 +576,10 @@ From there you can use pip to install it:
 `pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
+
+2.23.0
+
+- Enable setting of authentication credentials when connecting to the pact broker
 
 2.22.0
 

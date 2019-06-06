@@ -1,10 +1,11 @@
 import glob
 import logging
+
 import pytest
 import os
 from _pytest.outcomes import Failed
 
-from .broker_pact import BrokerPact, BrokerPacts
+from .broker_pact import BrokerPact, BrokerPacts, PactBrokerConfig
 from .result import log, PytestResult
 
 
@@ -13,6 +14,10 @@ def pytest_addoption(parser):
                      help="pact JSON files to verify (wildcards allowed)")
     parser.addoption("--pact-broker-url", default='',
                      help="pact broker URL")
+    parser.addoption("--pact-broker-auth", default='',
+                     help="pact broker basic auth user:password")
+    parser.addoption("--pact-broker-token", default='',
+                     help="pact broker bearer token")
     parser.addoption("--pact-provider-name", default=None,
                      help="provider pact name")
     parser.addoption("--pact-consumer-name", default=None,
@@ -94,7 +99,8 @@ def pytest_generate_tests(metafunc):
             provider_name = metafunc.config.getoption('pact_provider_name')
             if not provider_name:
                 raise ValueError('--pact-broker-url requires the --pact-provider-name option')
-            broker_pacts = BrokerPacts(provider_name, pact_broker_url=broker_url, result_factory=PytestResult)
+            broker_config = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'))
+            broker_pacts = BrokerPacts(provider_name, pact_broker_config=broker_config, result_factory=PytestResult)
             pacts = broker_pacts.consumers()
             filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
             if filter_consumer_name:

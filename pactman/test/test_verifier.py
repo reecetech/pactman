@@ -7,7 +7,7 @@ import requests
 
 import pytest
 import semver
-from pactman.verifier.broker_pact import BrokerPact, BrokerPacts, pact_id
+from pactman.verifier.broker_pact import BrokerPact, BrokerPacts, pact_id, PactBrokerConfig
 from pactman.verifier.result import Result
 from pactman.verifier.verify import (Interaction, RequestVerifier,
                                      ResponseVerifier)
@@ -69,10 +69,10 @@ def test_pact_id():
 
 
 def test_pact_loading(monkeypatch, fake_pact):
-    p = BrokerPacts('SpamProvider', 'http://broker.example/')
+    p = BrokerPacts('SpamProvider', PactBrokerConfig('http://broker.example/'))
     mock_pact = Mock(fetch=Mock(return_value=fake_pact))
     mock_provider = Mock(fetch=lambda: None, __getitem__=lambda s, k: [mock_pact])
-    monkeypatch.setattr(Navigator, 'hal', lambda url, default_curie=None: {
+    monkeypatch.setattr(Navigator, 'hal', lambda url, default_curie=None, auth=None, headers=None: {
         'latest-provider-pacts': lambda provider=None: mock_provider
     })
 
@@ -458,3 +458,33 @@ def test_testcases(filename, version, verifier, response, mock_pact, mock_result
         success = not bool(rv.result.fail.call_count)
         assert result == success, 'fail() was not called for failure here'
         assert case['match'] == success
+
+
+@pytest.mark.parametrize(
+    'url, used_url, auth',
+    [
+        ('http://some.example/', 'http://some.example/', None),
+        ('http://user:pass@some.example/', 'http://some.example/', ('user', 'pass')),
+        ('https://some.example/', 'https://some.example/', None),
+    ]
+)
+def test_broker_config_url(monkeypatch, url, used_url, auth):
+    monkeypatch.setattr(Navigator, 'hal', Mock())
+    PactBrokerConfig(url).get_broker_navigator()
+    Navigator.hal.assert_called_once_with(used_url, auth=auth, default_curie='pb', headers=None)
+
+
+def test_broker_config_uses_auth_env(monkeypatch):
+    monkeypatch.setenv('PACT_BROKER_AUTH', 'user:pass')
+    monkeypatch.setattr(Navigator, 'hal', Mock())
+    PactBrokerConfig('http://some.example/').get_broker_navigator()
+    Navigator.hal.assert_called_once_with('http://some.example/', auth=('user', 'pass'), default_curie='pb',
+                                          headers=None)
+
+
+def test_broker_config_uses_token_env(monkeypatch):
+    monkeypatch.setenv('PACT_BROKER_TOKEN', 'token')
+    monkeypatch.setattr(Navigator, 'hal', Mock())
+    PactBrokerConfig('http://some.example/').get_broker_navigator()
+    Navigator.hal.assert_called_once_with('http://some.example/', auth=None, default_curie='pb',
+                                          headers=dict(Authorization='Bearer token'))
