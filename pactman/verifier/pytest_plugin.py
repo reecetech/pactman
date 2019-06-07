@@ -14,14 +14,15 @@ def pytest_addoption(parser):
                      help="pact JSON files to verify (wildcards allowed)")
     parser.addoption("--pact-broker-url", default='',
                      help="pact broker URL")
-    parser.addoption("--pact-broker-auth", default='',
-                     help="pact broker basic auth user:password")
     parser.addoption("--pact-broker-token", default='',
                      help="pact broker bearer token")
     parser.addoption("--pact-provider-name", default=None,
                      help="provider pact name")
     parser.addoption("--pact-consumer-name", default=None,
                      help="consumer to limit verification to")
+    parser.addoption("--pact-consumer-version-tag", metavar='TAG', action='append',
+                     help='limit broker pacts tested to those matching the tag. May be specified '
+                          'multiple times to further restrict the set of pacts.')
     parser.addoption("--pact-publish-results", action="store_true", default=False,
                      help="report pact results to pact broker")
     parser.addoption("--pact-provider-version", default=None,
@@ -99,8 +100,9 @@ def pytest_generate_tests(metafunc):
             provider_name = metafunc.config.getoption('pact_provider_name')
             if not provider_name:
                 raise ValueError('--pact-broker-url requires the --pact-provider-name option')
-            broker_config = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'))
-            broker_pacts = BrokerPacts(provider_name, pact_broker_config=broker_config, result_factory=PytestResult)
+            broker = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'),
+                                      metafunc.config.getoption('pact_consumer_version_tag', []))
+            broker_pacts = BrokerPacts(provider_name, pact_broker=broker, result_factory=PytestResult)
             pacts = broker_pacts.consumers()
             filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
             if filter_consumer_name:

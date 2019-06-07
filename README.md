@@ -451,19 +451,6 @@ be used multiple times
 An additional header may also be supplied in the `PROVIDER_EXTRA_HEADER` environment variable, though the command
 line argument(s) would override this.
 
-#### Pact Broker Configuration
-
-You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
-
-If HTTP Basic Auth is required for the broker, that may be provided in the URL:
- 
-    pactman-verifier -b http://user:password@pact-broker.example/ ...
-
-or set in the `PACT_BROKER_AUTH` environment variable as `user:password`.
-
-If your broker needs a bearer token then you may provide that on the command line or set it in the
-environment variable `PACT_BROKER_TOKEN`.
-
 #### Provider States
 
 In many cases, your contracts will need very specific data to exist on the provider
@@ -555,6 +542,30 @@ $ pytest --pact-files=/tmp/pacts/*.json tests/verify_pacts.py
 $ pytest --pact-broker-url=http://pact-broker.example/ --pact-provider-name=MyService tests/verify_pacts.py
 ```
 
+### Pact Broker Configuration
+
+You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
+
+If HTTP Basic Auth is required for the broker, that may be provided in the URL:
+ 
+    pactman-verifier -b http://user:password@pact-broker.example/ ...
+    pytest --pact-broker-url=http://user:password@pact-broker.example/ ...
+
+or set in the `PACT_BROKER_AUTH` environment variable as `user:password`.
+
+If your broker needs a bearer token then you may provide that on the command line or set it in the
+environment variable `PACT_BROKER_TOKEN`.
+
+#### Filtering Broker Pacts by Tag
+
+If your consumer pacts have tags (called "consumer version tags" because they attach to specific
+versions) then you may specify the tag(s) to fetch pacts for on the command line. Multiple tags
+may be specified, and all pacts matching any tags specified will be verified. For example, to ensure
+you're verifying your Provider against the *production* pact versions from your Consumers, use:
+
+    pactman-verifier --consumer-version-tag=production -b http://pact-broker.example/ ...
+    pytest --pact-consumer-version-tag=production --pact-broker-url=http://pact-broker.example/ ...
+
 
 # Development
 Please read [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -580,6 +591,7 @@ From there you can use pip to install it:
 2.23.0
 
 - Enable setting of authentication credentials when connecting to the pact broker
+- Allow filtering of pacts fetched from broker to be filtered by consumer version tag
 
 2.22.0
 

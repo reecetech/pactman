@@ -42,6 +42,10 @@ parser.add_argument('-l', '--local-pact-file', default=None,
 parser.add_argument('-c', '--consumer', default=None,
                     help='the name of the consumer to test')
 
+parser.add_argument('--consumer-version-tag', metavar='TAG', action='append',
+                    help='limit broker pacts tested to those matching the tag. May be specified multiple times to '
+                         'further restrict the set of pacts.')
+
 parser.add_argument('--custom-provider-header', metavar='PROVIDER_EXTRA_HEADER', action='append',
                     help='Header to add to provider state set up and pact verification requests. '
                          'eg "Authorization: Basic cGFjdDpwYWN0". May be specified multiple times.')
@@ -93,7 +97,7 @@ def get_pacts(args):
     if args.local_pact_file:
         pacts = [BrokerPact.load_file(args.local_pact_file, result_factory)]
     else:
-        broker_config = PactBrokerConfig(args.broker_url, args.broker_token)
+        broker_config = PactBrokerConfig(args.broker_url, args.broker_token, args.consumer_version_tag)
         pacts = BrokerPacts(args.provider_name, broker_config, result_factory).consumers()
     return pacts
 
