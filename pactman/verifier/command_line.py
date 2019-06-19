@@ -43,8 +43,9 @@ parser.add_argument('-c', '--consumer', default=None,
                     help='the name of the consumer to test')
 
 parser.add_argument('--consumer-version-tag', metavar='TAG', action='append',
-                    help='limit broker pacts tested to those matching the tag. May be specified multiple times to '
-                         'further restrict the set of pacts.')
+                    help='limit broker pacts tested to those matching the tag. May be specified '
+                         'multiple times in which case pacts matching any of these tags will be '
+                         'verified.')
 
 parser.add_argument('--custom-provider-header', metavar='PROVIDER_EXTRA_HEADER', action='append',
                     help='Header to add to provider state set up and pact verification requests. '

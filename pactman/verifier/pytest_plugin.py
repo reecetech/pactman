@@ -22,7 +22,8 @@ def pytest_addoption(parser):
                      help="consumer to limit verification to")
     parser.addoption("--pact-consumer-version-tag", metavar='TAG', action='append',
                      help='limit broker pacts tested to those matching the tag. May be specified '
-                          'multiple times to further restrict the set of pacts.')
+                          'multiple times in which case pacts matching any of these tags will be '
+                          'verified.')
     parser.addoption("--pact-publish-results", action="store_true", default=False,
                      help="report pact results to pact broker")
     parser.addoption("--pact-provider-version", default=None,
