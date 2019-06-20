@@ -520,7 +520,7 @@ Once you have written the pytest code, you need to invoke pytest with additional
 
 `--pact-broker-url=<URL>` provides the base URL of the Pact broker to retrieve pacts from for the
 provider. You must also provide `--pact-provider-name=<ProviderName>` to identify which provider to
-retrieve pacts for from the broker. You may provider `--pact-consumer-name=<ConsumerName>` to limit
+retrieve pacts for from the broker. You may provider `--pact-verify-consumer=<ConsumerName>` to limit
 the pacts verified to just that consumer. As with the command-line verifier, you may provide basic
 auth details in the broker URL, or through the `PACT_BROKER_AUTH` environment variable. If your broker
 requires a bearer token you may provide it with `--pact-broker-token=<TOKEN>` or the `PACT_BROKER_TOKEN`
@@ -541,6 +541,8 @@ $ pytest --pact-files=/tmp/pacts/*.json tests/verify_pacts.py
 # verify some pacts in a broker for the provider MyService
 $ pytest --pact-broker-url=http://pact-broker.example/ --pact-provider-name=MyService tests/verify_pacts.py
 ```
+
+See the "pact" section in the pytest command-line help (`pytest -h`) for all command-line options.
 
 ### Pact Broker Configuration
 
@@ -564,7 +566,7 @@ may be specified, and all pacts matching any tags specified will be verified. Fo
 you're verifying your Provider against the *production* pact versions from your Consumers, use:
 
     pactman-verifier --consumer-version-tag=production -b http://pact-broker.example/ ...
-    pytest --pact-consumer-version-tag=production --pact-broker-url=http://pact-broker.example/ ...
+    pytest --pact-verify-consumer-tag=production --pact-broker-url=http://pact-broker.example/ ...
 
 
 # Development
@@ -588,10 +590,15 @@ From there you can use pip to install it:
 
 ## Release History
 
+3.0.0 (FUTURE, DEPRECATION WARNINGS)
+
+- remove DEPRECATED `--pact-consumer-name` command-line option
+
 2.23.0
 
 - Enable setting of authentication credentials when connecting to the pact broker
 - Allow filtering of pacts fetched from broker to be filtered by consumer version tag
+- Improve the naming and organisation of the pytest command line options
 
 2.22.0
 
