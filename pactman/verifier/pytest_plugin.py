@@ -1,5 +1,6 @@
 import glob
 import logging
+import warnings
 
 import pytest
 import os
@@ -10,22 +11,38 @@ from .result import log, PytestResult
 
 
 def pytest_addoption(parser):
-    parser.addoption("--pact-files", default=None,
-                     help="pact JSON files to verify (wildcards allowed)")
-    parser.addoption("--pact-broker-url", default='',
-                     help="pact broker URL")
-    parser.addoption("--pact-broker-auth", default='',
-                     help="pact broker basic auth user:password")
-    parser.addoption("--pact-broker-token", default='',
-                     help="pact broker bearer token")
-    parser.addoption("--pact-provider-name", default=None,
-                     help="provider pact name")
-    parser.addoption("--pact-consumer-name", default=None,
-                     help="consumer to limit verification to")
-    parser.addoption("--pact-publish-results", action="store_true", default=False,
-                     help="report pact results to pact broker")
-    parser.addoption("--pact-provider-version", default=None,
-                     help="provider version to use when reporting pact results to pact broker")
+    group = parser.getgroup("pact specific options (pactman)")
+    group.addoption("--pact-files", default=None,
+                    help="pact JSON files to verify (wildcards allowed)")
+    group.addoption("--pact-broker-url", default='',
+                    help="pact broker URL")
+    group.addoption("--pact-broker-token", default='',
+                    help="pact broker bearer token")
+    group.addoption("--pact-provider-name", default=None,
+                    help="pact name of provider being verified")
+    group.addoption("--pact-consumer-name", default=None,
+                    help="consumer name to limit pact verification to - "
+                         "DEPRECATED, use --pact-verify-consumer instead")
+    group.addoption("--pact-verify-consumer", default=None,
+                    help="consumer name to limit pact verification to")
+    group.addoption("--pact-verify-consumer-tag", metavar='TAG', action='append',
+                    help='limit broker pacts verified to those matching the tag. May be '
+                         'specified multiple times in which case pacts matching any of these '
+                         'tags will be verified.')
+    group.addoption("--pact-publish-results", action="store_true", default=False,
+                    help="report pact verification results to pact broker")
+    group.addoption("--pact-provider-version", default=None,
+                    help="provider version to use when reporting pact results to pact broker")
+# Future options to be implemented. Listing them here so naming consistency can be a thing.
+#    group.addoption("--pact-publish-pacts", action="store_true", default=False,
+#                    help="publish pacts to pact broker")
+#    group.addoption("--pact-consumer-version", default=None,
+#                    help="consumer version to use when publishing pacts to the broker")
+#    group.addoption("--pact-consumer-version-source", default=None,
+#                    help="generate consumer version from source 'git-tag' or 'git-hash'")
+#    group.addoption("--pact-consumer-version-tag", metavar='TAG', action="append",
+#                    help="tag(s) that should be applied to the consumer version when pacts "
+#                         "are uploaded to the broker; multiple tags may be supplied")
 
 
 def get_broker_url(config):
@@ -99,10 +116,16 @@ def pytest_generate_tests(metafunc):
             provider_name = metafunc.config.getoption('pact_provider_name')
             if not provider_name:
                 raise ValueError('--pact-broker-url requires the --pact-provider-name option')
-            broker_config = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'))
-            broker_pacts = BrokerPacts(provider_name, pact_broker_config=broker_config, result_factory=PytestResult)
+            broker = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'),
+                                      metafunc.config.getoption('pact_consumer_version_tag', []))
+            broker_pacts = BrokerPacts(provider_name, pact_broker=broker, result_factory=PytestResult)
             pacts = broker_pacts.consumers()
-            filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
+            filter_consumer_name = metafunc.config.getoption('pact_verify_consumer')
+            if not filter_consumer_name:
+                filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
+                if filter_consumer_name:
+                    warnings.warn('The --pact-consumer-name command-line option is deprecated '
+                                  'and will be removed in the 3.0.0 release.', DeprecationWarning)
             if filter_consumer_name:
                 pacts = [pact for pact in pacts if pact.consumer == filter_consumer_name]
             metafunc.parametrize("pact_verifier", flatten_pacts(pacts), ids=test_id, indirect=True)

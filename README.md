@@ -451,19 +451,6 @@ be used multiple times
 An additional header may also be supplied in the `PROVIDER_EXTRA_HEADER` environment variable, though the command
 line argument(s) would override this.
 
-#### Pact Broker Configuration
-
-You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
-
-If HTTP Basic Auth is required for the broker, that may be provided in the URL:
- 
-    pactman-verifier -b http://user:password@pact-broker.example/ ...
-
-or set in the `PACT_BROKER_AUTH` environment variable as `user:password`.
-
-If your broker needs a bearer token then you may provide that on the command line or set it in the
-environment variable `PACT_BROKER_TOKEN`.
-
 #### Provider States
 
 In many cases, your contracts will need very specific data to exist on the provider
@@ -533,7 +520,7 @@ Once you have written the pytest code, you need to invoke pytest with additional
 
 `--pact-broker-url=<URL>` provides the base URL of the Pact broker to retrieve pacts from for the
 provider. You must also provide `--pact-provider-name=<ProviderName>` to identify which provider to
-retrieve pacts for from the broker. You may provider `--pact-consumer-name=<ConsumerName>` to limit
+retrieve pacts for from the broker. You may provider `--pact-verify-consumer=<ConsumerName>` to limit
 the pacts verified to just that consumer. As with the command-line verifier, you may provide basic
 auth details in the broker URL, or through the `PACT_BROKER_AUTH` environment variable. If your broker
 requires a bearer token you may provide it with `--pact-broker-token=<TOKEN>` or the `PACT_BROKER_TOKEN`
@@ -554,6 +541,32 @@ $ pytest --pact-files=/tmp/pacts/*.json tests/verify_pacts.py
 # verify some pacts in a broker for the provider MyService
 $ pytest --pact-broker-url=http://pact-broker.example/ --pact-provider-name=MyService tests/verify_pacts.py
 ```
+
+See the "pact" section in the pytest command-line help (`pytest -h`) for all command-line options.
+
+### Pact Broker Configuration
+
+You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
+
+If HTTP Basic Auth is required for the broker, that may be provided in the URL:
+ 
+    pactman-verifier -b http://user:password@pact-broker.example/ ...
+    pytest --pact-broker-url=http://user:password@pact-broker.example/ ...
+
+or set in the `PACT_BROKER_AUTH` environment variable as `user:password`.
+
+If your broker needs a bearer token then you may provide that on the command line or set it in the
+environment variable `PACT_BROKER_TOKEN`.
+
+#### Filtering Broker Pacts by Tag
+
+If your consumer pacts have tags (called "consumer version tags" because they attach to specific
+versions) then you may specify the tag(s) to fetch pacts for on the command line. Multiple tags
+may be specified, and all pacts matching any tags specified will be verified. For example, to ensure
+you're verifying your Provider against the *production* pact versions from your Consumers, use:
+
+    pactman-verifier --consumer-version-tag=production -b http://pact-broker.example/ ...
+    pytest --pact-verify-consumer-tag=production --pact-broker-url=http://pact-broker.example/ ...
 
 
 # Development
@@ -577,9 +590,15 @@ From there you can use pip to install it:
 
 ## Release History
 
+3.0.0 (FUTURE, DEPRECATION WARNINGS)
+
+- remove DEPRECATED `--pact-consumer-name` command-line option
+
 2.23.0
 
 - Enable setting of authentication credentials when connecting to the pact broker
+- Allow filtering of pacts fetched from broker to be filtered by consumer version tag
+- Improve the naming and organisation of the pytest command line options
 
 2.22.0
 

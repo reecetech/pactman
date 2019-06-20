@@ -18,7 +18,7 @@ def pact_id(param):
 
 
 class PactBrokerConfig:
-    def __init__(self, url=None, token=None):
+    def __init__(self, url=None, token=None, tags=None):
         url = url or os.environ.get('PACT_BROKER_URL')
         if not url:
             raise ValueError('pact broker URL must be specified')
@@ -43,25 +43,55 @@ class PactBrokerConfig:
         if token:
             self.headers = {'Authorization': f'Bearer {token}'}
 
+        self.tags = tags
+
     def get_broker_navigator(self):
         return Navigator.hal(self.url, default_curie='pb', auth=self.auth, headers=self.headers)
 
+    def get_pacts_for_provider(self, provider):
+        if self.tags:
+            yield from self.get_tagged_pacts(provider)
+        else:
+            yield from self.get_all_pacts(provider)
+
+    def get_all_pacts(self, provider):
+        nav = self.get_broker_navigator()
+        try:
+            broker_provider = nav['latest-provider-pacts'](provider=provider)
+        except Exception as e:
+            raise ValueError(f'error fetching pacts from {self.url} for {provider}: {e}')
+        broker_provider.fetch()
+        for broker_pact in broker_provider['pacts']:
+            yield broker_pact, broker_pact.fetch()
+
+    def get_tagged_pacts(self, provider):
+        nav = self.get_broker_navigator()
+        # fetch a set for each tag, just make sure we don't verify the same pact more than once
+        seen = set()
+        for tag in self.tags:
+            try:
+                broker_provider = nav['latest-provider-pacts-with-tag'](provider=provider, tag=tag)
+            except Exception as e:
+                raise ValueError(f'error fetching pacts from {self.url} for {provider}: {e}')
+            broker_provider.fetch()
+            for broker_pact in broker_provider['pacts']:
+                content = broker_pact.fetch()
+                # don't re-run the same pact content
+                h = str(content)
+                if h in seen:
+                    continue
+                seen.add(h)
+                yield broker_pact, content
+
 
 class BrokerPacts:
-    def __init__(self, provider_name, pact_broker_config=None, result_factory=LoggedResult):
+    def __init__(self, provider_name, pact_broker=None, result_factory=LoggedResult):
         self.provider_name = provider_name
-        self.pact_broker_config = pact_broker_config or PactBrokerConfig()
+        self.pact_broker = pact_broker or PactBrokerConfig()
         self.result_factory = result_factory
 
     def consumers(self):
-        nav = self.pact_broker_config.get_broker_navigator()
-        try:
-            broker_provider = nav['latest-provider-pacts'](provider=self.provider_name)
-        except Exception as e:
-            raise ValueError(f'error fetching pacts from {self.pact_broker_config.url} for {self.provider_name}: {e}')
-        broker_provider.fetch()
-        for broker_pact in broker_provider['pacts']:
-            pact_contents = broker_pact.fetch()
+        for broker_pact, pact_contents in self.pact_broker.get_pacts_for_provider(self.provider_name):
             yield BrokerPact(pact_contents, self.result_factory, broker_pact)
 
     def all_interactions(self):
