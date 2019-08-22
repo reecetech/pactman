@@ -39,18 +39,40 @@ class LoggedResult(Result):
 
 
 class PytestResult(Result):   # pragma: no cover
-    def start(self, interaction):
-        log.info(f'Verifying {interaction}')
+    def __init__(self, *, level=logging.WARNING):
+        self.records = []
+        self.level = level
+        self.current_consumer = None
 
-    def warn(self, message):
-        log.warning(Fore.RED + message + Fore.RESET)
+    def start(self, interaction):
+        super().start(interaction)
+        log = logging.getLogger('pactman')
+        log.handlers = [self]
+        log.setLevel(logging.DEBUG)
+        log.propagate = False
+        self.records[:] = []
+
+    def handle(self, record):
+        self.records.append(record)
 
     def fail(self, message, path=None):
         from _pytest.outcomes import Failed
         __tracebackhide__ = True
         self.success = self.FAIL
-        log.warning(' ' + message)
+        log.error(message)
         raise Failed(message) from None
+
+    def warn(self, message):
+        log.warning(message)
+
+    def results_for_terminal(self):
+        for record in self.records:
+            if record.levelno > logging.WARN:
+                yield record.msg, dict(red=True)
+            elif record.levelno > logging.INFO:
+                yield record.msg, dict(yellow=True)
+            else:
+                yield record.msg, {}
 
 
 class CaptureResult(Result):

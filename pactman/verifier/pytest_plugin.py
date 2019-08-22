@@ -5,6 +5,7 @@ import warnings
 import pytest
 import os
 from _pytest.outcomes import Failed
+from _pytest.reports import TestReport
 
 from .broker_pact import BrokerPact, BrokerPacts, PactBrokerConfig
 from .result import log, PytestResult
@@ -129,6 +130,38 @@ def pytest_generate_tests(metafunc):
             if filter_consumer_name:
                 pacts = [pact for pact in pacts if pact.consumer == filter_consumer_name]
             metafunc.parametrize("pact_verifier", flatten_pacts(pacts), ids=test_id, indirect=True)
+
+
+class PactTestReport(TestReport):
+    '''Custom TestReport that allows us to attach an interaction to the result, and
+    then display the interaction's verification result ouput as well as the traceback
+    of the failure.
+    '''
+    @classmethod
+    def from_item_and_call(cls, item, call, interaction):
+        report = super().from_item_and_call(item, call)
+        report.pact_interaction = interaction
+        # the toterminal() call can't reasonably get at this config, so we store it here
+        report.verbosity = item.config.option.verbose
+        return report
+
+    def toterminal(self, out):
+        out.line('Pact failure details:', bold=True)
+        for text, kw in self.pact_interaction.result.results_for_terminal():
+            out.line(text, **kw)
+        if self.verbosity > 0:
+            out.line('Traceback:', bold=True)
+            return super().toterminal(out)
+        else:
+            out.line('Traceback not shown, use pytest -v to show it')
+
+def pytest_runtest_makereport(item, call):
+    if call.when != 'call' or 'pact_verifier' not in getattr(item, 'fixturenames', []):
+        return
+    # use our custom TestReport subclass if we're reporting on a pact verification call
+    interaction = item.funcargs['pact_verifier'].interaction
+    report = PactTestReport.from_item_and_call(item, call, interaction)
+    return report
 
 
 @pytest.fixture()

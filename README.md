@@ -542,6 +542,9 @@ $ pytest --pact-files=/tmp/pacts/*.json tests/verify_pacts.py
 $ pytest --pact-broker-url=http://pact-broker.example/ --pact-provider-name=MyService tests/verify_pacts.py
 ```
 
+If you need to see the traceback that caused a pact failure you can use the verbosity flag
+to pytest (`pytest -v`).
+
 See the "pact" section in the pytest command-line help (`pytest -h`) for all command-line options.
 
 ### Pact Broker Configuration
@@ -593,6 +596,10 @@ From there you can use pip to install it:
 3.0.0 (FUTURE, DEPRECATION WARNINGS)
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
+
+2.24.0
+
+- Better integration of pact failure information in pytest
 
 2.23.0
 
