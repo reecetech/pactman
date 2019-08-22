@@ -106,31 +106,30 @@ def test_id(identifier):
 
 
 def pytest_generate_tests(metafunc):
-    if 'pact_verifier' not in metafunc.fixturenames:
-        return
-    broker_url = get_broker_url(metafunc.config)
-    if not broker_url:
-        pact_files = get_pact_files(metafunc.config.getoption('pact_files'))
-        if not pact_files:
-            raise ValueError('need a --pact-broker-url or --pact-files option')
-        metafunc.parametrize("pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True)
-    else:
-        provider_name = metafunc.config.getoption('pact_provider_name')
-        if not provider_name:
-            raise ValueError('--pact-broker-url requires the --pact-provider-name option')
-        broker = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'),
-                                  metafunc.config.getoption('pact_consumer_version_tag', []))
-        broker_pacts = BrokerPacts(provider_name, pact_broker=broker, result_factory=PytestResult)
-        pacts = broker_pacts.consumers()
-        filter_consumer_name = metafunc.config.getoption('pact_verify_consumer')
-        if not filter_consumer_name:
-            filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
+    if 'pact_verifier' in metafunc.fixturenames:
+        broker_url = get_broker_url(metafunc.config)
+        if not broker_url:
+            pact_files = get_pact_files(metafunc.config.getoption('pact_files'))
+            if not pact_files:
+                raise ValueError('need a --pact-broker-url or --pact-files option')
+            metafunc.parametrize("pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True)
+        else:
+            provider_name = metafunc.config.getoption('pact_provider_name')
+            if not provider_name:
+                raise ValueError('--pact-broker-url requires the --pact-provider-name option')
+            broker = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'),
+                                      metafunc.config.getoption('pact_consumer_version_tag', []))
+            broker_pacts = BrokerPacts(provider_name, pact_broker=broker, result_factory=PytestResult)
+            pacts = broker_pacts.consumers()
+            filter_consumer_name = metafunc.config.getoption('pact_verify_consumer')
+            if not filter_consumer_name:
+                filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
+                if filter_consumer_name:
+                    warnings.warn('The --pact-consumer-name command-line option is deprecated '
+                                  'and will be removed in the 3.0.0 release.', DeprecationWarning)
             if filter_consumer_name:
-                warnings.warn('The --pact-consumer-name command-line option is deprecated '
-                              'and will be removed in the 3.0.0 release.', DeprecationWarning)
-        if filter_consumer_name:
-            pacts = [pact for pact in pacts if pact.consumer == filter_consumer_name]
-        metafunc.parametrize("pact_verifier", flatten_pacts(pacts), ids=test_id, indirect=True)
+                pacts = [pact for pact in pacts if pact.consumer == filter_consumer_name]
+            metafunc.parametrize("pact_verifier", flatten_pacts(pacts), ids=test_id, indirect=True)
 
 
 class PactTestReport(TestReport):
