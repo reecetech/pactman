@@ -5,6 +5,7 @@ import warnings
 import pytest
 import os
 from _pytest.outcomes import Failed
+from _pytest.reports import TestReport
 
 from .broker_pact import BrokerPact, BrokerPacts, PactBrokerConfig
 from .result import log, PytestResult
@@ -105,30 +106,57 @@ def test_id(identifier):
 
 
 def pytest_generate_tests(metafunc):
-    if 'pact_verifier' in metafunc.fixturenames:
-        broker_url = get_broker_url(metafunc.config)
-        if not broker_url:
-            pact_files = get_pact_files(metafunc.config.getoption('pact_files'))
-            if not pact_files:
-                raise ValueError('need a --pact-broker-url or --pact-files option')
-            metafunc.parametrize("pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True)
-        else:
-            provider_name = metafunc.config.getoption('pact_provider_name')
-            if not provider_name:
-                raise ValueError('--pact-broker-url requires the --pact-provider-name option')
-            broker = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'),
-                                      metafunc.config.getoption('pact_consumer_version_tag', []))
-            broker_pacts = BrokerPacts(provider_name, pact_broker=broker, result_factory=PytestResult)
-            pacts = broker_pacts.consumers()
-            filter_consumer_name = metafunc.config.getoption('pact_verify_consumer')
-            if not filter_consumer_name:
-                filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
-                if filter_consumer_name:
-                    warnings.warn('The --pact-consumer-name command-line option is deprecated '
-                                  'and will be removed in the 3.0.0 release.', DeprecationWarning)
+    if 'pact_verifier' not in metafunc.fixturenames:
+        return
+    broker_url = get_broker_url(metafunc.config)
+    if not broker_url:
+        pact_files = get_pact_files(metafunc.config.getoption('pact_files'))
+        if not pact_files:
+            raise ValueError('need a --pact-broker-url or --pact-files option')
+        metafunc.parametrize("pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True)
+    else:
+        provider_name = metafunc.config.getoption('pact_provider_name')
+        if not provider_name:
+            raise ValueError('--pact-broker-url requires the --pact-provider-name option')
+        broker = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'),
+                                  metafunc.config.getoption('pact_consumer_version_tag', []))
+        broker_pacts = BrokerPacts(provider_name, pact_broker=broker, result_factory=PytestResult)
+        pacts = broker_pacts.consumers()
+        filter_consumer_name = metafunc.config.getoption('pact_verify_consumer')
+        if not filter_consumer_name:
+            filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
             if filter_consumer_name:
-                pacts = [pact for pact in pacts if pact.consumer == filter_consumer_name]
-            metafunc.parametrize("pact_verifier", flatten_pacts(pacts), ids=test_id, indirect=True)
+                warnings.warn('The --pact-consumer-name command-line option is deprecated '
+                              'and will be removed in the 3.0.0 release.', DeprecationWarning)
+        if filter_consumer_name:
+            pacts = [pact for pact in pacts if pact.consumer == filter_consumer_name]
+        metafunc.parametrize("pact_verifier", flatten_pacts(pacts), ids=test_id, indirect=True)
+
+
+class PactTestReport(TestReport):
+    @classmethod
+    def from_item_and_call(cls, item, call, interaction):
+        report = super().from_item_and_call(item, call)
+        report.pact_interaction = interaction
+        report.verbosity = item.config.option.verbose
+        return report
+
+    def toterminal(self, out):
+        out.line('Pact failure details:', bold=True)
+        for text, kw in self.pact_interaction.result.results_for_terminal():
+            out.line(text, **kw)
+        if self.verbosity > 1:
+            out.line('Traceback:', bold=True)
+            return super().toterminal(out)
+        else:
+            out.line('Traceback not shown, use pytest -v to show it')
+
+def pytest_runtest_makereport(item, call):
+    if call.when != 'call' or 'pact_verifier' not in getattr(item, 'fixturenames', []):
+        return
+    interaction = item.funcargs['pact_verifier'].interaction
+    report = TestReport.from_item_and_call(item, call)
+    return report
 
 
 @pytest.fixture()
