@@ -155,6 +155,7 @@ class PactTestReport(TestReport):
         else:
             out.line('Traceback not shown, use pytest -v to show it')
 
+
 def pytest_runtest_makereport(item, call):
     if call.when != 'call' or 'pact_verifier' not in getattr(item, 'fixturenames', []):
         return
