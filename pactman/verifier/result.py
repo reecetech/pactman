@@ -51,10 +51,6 @@ class PytestResult(Result):   # pragma: no cover
         log.setLevel(logging.DEBUG)
         log.propagate = False
         self.records[:] = []
-        print('START', self.success, self.records)
-
-    def end(self):
-        print('END', self.success, self.records)
 
     def handle(self, record):
         self.records.append(record)
