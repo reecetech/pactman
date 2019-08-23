@@ -3,27 +3,4 @@ Further pytest support
 
 Maybe handle config.option.tbstyle == "line" and others.
 
-Add option to detect failures but not fail the pytest run, similar to xfail,
-using the existing report.wasxfail, and some fiddling of the test status
-using the following hints:
-
-# def pytest_report_teststatus(report, config):
-#     if not hasattr(report, 'pact_interaction'):
-#         return
-#
-#     if hasattr(report, "wasxfail"):
-#         if report.skipped:
-#             return "xfailed", "x", "XFAIL"
-#         elif report.passed:
-#             return "xpassed", "X", "XPASS"
-#     if report.passed:
-#         letter = "."
-#     elif report.skipped:
-#         letter = "s"
-#     elif report.failed:
-#         letter = "F"
-#         if report.when != "call":
-#             letter = "f"
-#     return report.outcome, letter, report.outcome.upper()
-
-Continue from that to implement the "pending" pact feature.
+Implement the "pending" pact feature.

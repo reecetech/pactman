@@ -597,6 +597,10 @@ From there you can use pip to install it:
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
 
+2.25.0
+
+- Add option to allow pytest to succeed even if a pact verification fails
+
 2.24.0
 
 - Better integration of pact failure information in pytest
