@@ -4,7 +4,7 @@ import os
 from .pact import Pact
 from .provider import Provider
 
-USE_MOCKING_SERVER = os.environ.get('PACT_USE_MOCKING_SERVER', 'no') == 'yes'
+USE_MOCKING_SERVER = os.environ.get("PACT_USE_MOCKING_SERVER", "no") == "yes"
 
 
 class Consumer(object):
@@ -35,10 +35,20 @@ class Consumer(object):
         self.name = name
         self.service_cls = service_cls
 
-    def has_pact_with(self, provider, host_name='localhost', port=None,
-                      log_dir=None, ssl=False, sslcert=None, sslkey=None,
-                      pact_dir=None, version='2.0.0', file_write_mode='overwrite',
-                      use_mocking_server=USE_MOCKING_SERVER):
+    def has_pact_with(
+        self,
+        provider,
+        host_name="localhost",
+        port=None,
+        log_dir=None,
+        ssl=False,
+        sslcert=None,
+        sslkey=None,
+        pact_dir=None,
+        version="2.0.0",
+        file_write_mode="overwrite",
+        use_mocking_server=USE_MOCKING_SERVER,
+    ):
         """
         Create a contract between the `provider` and this consumer.
 
@@ -99,8 +109,7 @@ class Consumer(object):
         :rtype: pact.Pact
         """
         if not isinstance(provider, (Provider,)):
-            raise ValueError(
-                'provider must be an instance of the Provider class.')
+            raise ValueError("provider must be an instance of the Provider class.")
 
         return self.service_cls(
             consumer=self,

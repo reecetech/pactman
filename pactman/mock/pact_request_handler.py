@@ -50,29 +50,29 @@ class PactRequestHandler:
 
         request = Request(method, url_parts.path, url_parts.query, self.headers, body)
         result = RecordResult()
-        RequestVerifier(self.pact, interaction['request'], result).verify(request)
+        RequestVerifier(self.pact, interaction["request"], result).verify(request)
         if not result.success:
             return self.handle_failure(result.reason)
         self.handle_success(interaction)
-        if self.pact.file_write_mode != 'never':
+        if self.pact.file_write_mode != "never":
             self.write_pact(interaction)
         return self.respond_for_interaction(interaction)
 
     def get_body(self):
         if not self.body:
-            return ''
-        content_type = [self.headers[h] for h in self.headers if h.lower() == 'content-type']
+            return ""
+        content_type = [self.headers[h] for h in self.headers if h.lower() == "content-type"]
         if content_type:
             content_type = content_type[0]
         else:
             # default content type for pacts
-            content_type = 'application/json'
+            content_type = "application/json"
 
-        if content_type == 'application/json':
+        if content_type == "application/json":
             return json.loads(self.body)
-        elif content_type == 'application/x-www-form-urlencoded':
+        elif content_type == "application/x-www-form-urlencoded":
             return urllib.parse.parse_qs(self.body)
-        raise ValueError(f'Unhandled body content type {content_type}')
+        raise ValueError(f"Unhandled body content type {content_type}")
 
     def get_interaction(self, path):
         raise NotImplementedError()
@@ -89,45 +89,49 @@ class PactRequestHandler:
     def handle_response_encoding(self, response, headers):
         # default to content-type to json
         # rfc4627 states JSON is Unicode and defaults to UTF-8
-        content_type = [headers[h] for h in headers if h.lower() == 'content-type']
+        content_type = [headers[h] for h in headers if h.lower() == "content-type"]
         if content_type:
             content_type = content_type[0]
-            if 'application/json' not in content_type:
-                return response['body']
-            charset = get_header_param(content_type, 'charset')
+            if "application/json" not in content_type:
+                return response["body"]
+            charset = get_header_param(content_type, "charset")
             if not charset:
-                charset = 'UTF-8'
+                charset = "UTF-8"
         else:
-            headers['Content-Type'] = 'application/json; charset=UTF-8'
-            charset = 'UTF-8'
-        return json.dumps(response['body']).encode(charset)
+            headers["Content-Type"] = "application/json; charset=UTF-8"
+            charset = "UTF-8"
+        return json.dumps(response["body"]).encode(charset)
 
     def write_pact(self, interaction):
         if self.pact.semver["major"] >= 3:
-            provider_state_key = 'providerStates'
+            provider_state_key = "providerStates"
         else:
-            provider_state_key = 'providerState'
+            provider_state_key = "providerState"
 
         if os.path.exists(self.pact.pact_json_filename):
             with open(self.pact.pact_json_filename) as f:
                 pact = json.load(f)
-            existing_version = pact['metadata']['pactSpecification']['version']
+            existing_version = pact["metadata"]["pactSpecification"]["version"]
             if existing_version != self.pact.version:
-                raise PactVersionConflict(f'Existing pact ("{pact["interactions"][0]["description"]}") specifies '
-                                          f'version {existing_version} but new pact ("interaction["description"]") '
-                                          f'specifies version {self.pact.version}')
-            for existing in pact['interactions']:
-                if (existing['description'] == interaction['description']
-                        and existing.get(provider_state_key) == interaction.get(provider_state_key)):
+                raise PactVersionConflict(
+                    f'Existing pact ("{pact["interactions"][0]["description"]}") specifies '
+                    f'version {existing_version} but new pact ("interaction["description"]") '
+                    f"specifies version {self.pact.version}"
+                )
+            for existing in pact["interactions"]:
+                if existing["description"] == interaction["description"] and existing.get(
+                    provider_state_key
+                ) == interaction.get(provider_state_key):
                     # already got one of these...
                     if existing != interaction:
                         raise PactInteractionMismatch(
                             f'Existing "{existing["description"]}" pact given {existing.get(provider_state_key)!r} '
-                            'exists with different request/response')
+                            "exists with different request/response"
+                        )
                     return
-            pact['interactions'].append(interaction)
+            pact["interactions"].append(interaction)
         else:
             pact = self.pact.construct_pact(interaction)
 
-        with open(self.pact.pact_json_filename, 'w') as f:
+        with open(self.pact.pact_json_filename, "w") as f:
             json.dump(pact, f, indent=2)

@@ -1,11 +1,10 @@
-from .matchers import (get_generated_values, get_matching_rules_v2,
-                       get_matching_rules_v3)
+from .matchers import get_generated_values, get_matching_rules_v2, get_matching_rules_v3
 
 
 class Request:
     """Represents an HTTP request and supports Matchers on its properties."""
 
-    def __init__(self, method, path, body=None, headers=None, query=''):
+    def __init__(self, method, path, body=None, headers=None, query=""):
         """
         Create a new instance of Request.
 
@@ -28,52 +27,49 @@ class Request:
 
     def json(self, spec_version):
         """Convert the Request to a JSON Pact."""
-        request = {
-            'method': self.method,
-            'path': get_generated_values(self.path)
-        }
+        request = {"method": self.method, "path": get_generated_values(self.path)}
 
         if self.headers:
-            request['headers'] = get_generated_values(self.headers)
+            request["headers"] = get_generated_values(self.headers)
 
         if self.body is not None:
-            request['body'] = get_generated_values(self.body)
+            request["body"] = get_generated_values(self.body)
 
         if self.query:
-            request['query'] = get_generated_values(self.query)
+            request["query"] = get_generated_values(self.query)
 
-        if spec_version == '2.0.0':
+        if spec_version == "2.0.0":
             matchingRules = self.generate_v2_matchingRules()
-        elif spec_version == '3.0.0':
+        elif spec_version == "3.0.0":
             matchingRules = self.generate_v3_matchingRules()
         else:
-            raise ValueError(f'Invalid Pact specification version={spec_version}')
+            raise ValueError(f"Invalid Pact specification version={spec_version}")
 
         if matchingRules:
-            request['matchingRules'] = matchingRules
+            request["matchingRules"] = matchingRules
         return request
 
     def generate_v2_matchingRules(self):
         # TODO check there's generation *and* verification tests for all these
-        matchingRules = get_matching_rules_v2(self.path, '$.path')
-        matchingRules.update(get_matching_rules_v2(self.headers, '$.headers'))
-        matchingRules.update(get_matching_rules_v2(self.body, '$.body'))
-        matchingRules.update(get_matching_rules_v2(self.query, '$.query'))
+        matchingRules = get_matching_rules_v2(self.path, "$.path")
+        matchingRules.update(get_matching_rules_v2(self.headers, "$.headers"))
+        matchingRules.update(get_matching_rules_v2(self.body, "$.body"))
+        matchingRules.update(get_matching_rules_v2(self.query, "$.query"))
         return matchingRules
 
     def generate_v3_matchingRules(self):
         # TODO check there's generation *and* verification tests for all these
-        matchingRules = get_matching_rules_v3(self.path, 'path')
-        matchingRules.update(split_header_paths(get_matching_rules_v3(self.headers, 'headers')))
+        matchingRules = get_matching_rules_v3(self.path, "path")
+        matchingRules.update(split_header_paths(get_matching_rules_v3(self.headers, "headers")))
 
         # body and query rules look different
-        body_rules = get_matching_rules_v3(self.body, '$')
+        body_rules = get_matching_rules_v3(self.body, "$")
         if body_rules:
-            matchingRules['body'] = body_rules
-        query_rules = get_matching_rules_v3(self.query, 'query')
+            matchingRules["body"] = body_rules
+        query_rules = get_matching_rules_v3(self.query, "query")
         if query_rules:
             expand_query_rules(query_rules)
-            matchingRules['query'] = query_rules
+            matchingRules["query"] = query_rules
         return matchingRules
 
 
@@ -88,10 +84,10 @@ def expand_query_rules(rules):
         matchers = rules.pop(rule_path)
         rule_param = rule_path[6:]
         # trim off any array wildcard, it's implied here
-        if rule_param.endswith('[*]'):
+        if rule_param.endswith("[*]"):
             rule_param = rule_param[:-3]
         if not rule_param:
-            rule_param = '*'
+            rule_param = "*"
         rules[rule_param] = matchers
 
 
@@ -102,6 +98,6 @@ def split_header_paths(rules):
         return {}
     result = dict(header={})
     for k in rules:
-        header = k.split('.')[1]
-        result['header'][header] = rules[k]
+        header = k.split(".")[1]
+        result["header"][header] = rules[k]
     return result

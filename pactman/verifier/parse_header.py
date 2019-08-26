@@ -37,18 +37,24 @@ def _parseparam(s, marker):
 
 
 def parse_header(line):
-    parts = _parseparam(';' + line, ';')
+    """Parse RFC-822 style headers to pull out parameters.
+
+    For example:
+    >>> parse_header("audio/*; q=0.2, audio/basic")
+    [Part(["audio/*"], []), Part(["audio/basic"], [("q", "0.2")])]
+    """
+    parts = _parseparam(";" + line, ";")
     for part in parts:
         params = []
         key = []
-        for option in _parseparam(',' + part, ','):
-            i = option.find('=')
+        for option in _parseparam("," + part, ","):
+            i = option.find("=")
             if i >= 0:
                 name = option[:i].strip().lower()
-                value = option[i+1:].strip()
+                value = option[i + 1 :].strip()  # noqa: E203
                 if len(value) >= 2 and value[0] == value[-1] == '"':
                     value = value[1:-1]
-                    value = value.replace('\\\\', '\\').replace('\\"', '"')
+                    value = value.replace("\\\\", "\\").replace('\\"', '"')
                 params.append((name, value))
             else:
                 key.append(option)

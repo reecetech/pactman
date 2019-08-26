@@ -200,7 +200,7 @@ pact = Consumer('Consumer').has_pact_with(Provider('Provider'), version='3.0.0')
 `file_write_mode` defaults to `"overwrite"` and should be that or `"merge"`. Overwrite ensures
 that any existing pact file will be removed when `has_pact_with()` is invoked. Merge will retain
 the pact file and add new pacts to that file. See [writing multiple pacts](#writing-multiple-pacts).
-If you absolutely do not want pact files to be written, use `"never"`. 
+If you absolutely do not want pact files to be written, use `"never"`.
 
 `use_mocking_server` defaults to `False` and controls the mocking method used by `pactman`. The default is to
 patch `urllib3`, which is the library underpinning `requests` and is also used by some other projects. If you
@@ -442,12 +442,12 @@ You can pass in a local pact file with `-l`, this will verify the service agains
 
     pactman-verifier -l /tmp/localpact.json <provider name> <provider url> <provider setup url>
 
-You can use `--custom-provider-header` to pass in headers to be passed to provider state setup and verify calls. it can 
+You can use `--custom-provider-header` to pass in headers to be passed to provider state setup and verify calls. it can
 be used multiple times
 
-    pactman-verifier -b <broker url> --custom-provider-header "someheader:value" --custom-provider-header 
+    pactman-verifier -b <broker url> --custom-provider-header "someheader:value" --custom-provider-header
     "this:that" <provider name> <provider url> <provider state url>
-    
+
 An additional header may also be supplied in the `PROVIDER_EXTRA_HEADER` environment variable, though the command
 line argument(s) would override this.
 
@@ -512,7 +512,7 @@ The `provider_state` function passed to `pact_verifier.verify` will be passed th
   and `params` will be empty.
 - For pacts with **providerStates** the function will be invoked once per entry in `providerStates`
   array with the `name` argument taken from the array entry `name` parameter, and `params` from
-  the `params` parameter. 
+  the `params` parameter.
 
 #### Command line options to control `pytest` verifying pacts
 
@@ -552,7 +552,7 @@ See the "pact" section in the pytest command-line help (`pytest -h`) for all com
 You may also specify the broker URL in the environment variable `PACT_BROKER_URL`.
 
 If HTTP Basic Auth is required for the broker, that may be provided in the URL:
- 
+
     pactman-verifier -b http://user:password@pact-broker.example/ ...
     pytest --pact-broker-url=http://user:password@pact-broker.example/ ...
 
@@ -574,22 +574,6 @@ you're verifying your Provider against the *production* pact versions from your 
 
 # Development
 Please read [CONTRIBUTING.md](CONTRIBUTING.md)
-
-To setup a development environment:
-
-1. Clone the repository `https://github.com/reecetech/pactman` and invoke `git submodule update --init`
-2. Install Python 3.6 from source or using a tool like [pyenv]
-3. Its recommended to create a Python [virtualenv] for the project
-
-To run tests, use:
-`tox`
-
-To package the application, run:
-`python setup.py sdist`
-
-This creates a `dist/pactman-N.N.N.tar.gz` file, where the Ns are the current version.
-From there you can use pip to install it:
-`pip install ./dist/pactman-N.N.N.tar.gz`
 
 ## Release History
 
@@ -713,7 +697,7 @@ From there you can use pip to install it:
 
 2.4.0
 
-- Create the pact destination dir if it's missing and its parent exists 
+- Create the pact destination dir if it's missing and its parent exists
 
 2.3.0
 
@@ -776,5 +760,3 @@ From there you can use pip to install it:
 [Pact specification version 3]: https://github.com/pact-foundation/pact-specification/tree/version-3
 [Provider States]: https://docs.pact.io/documentation/provider_states.html
 [pact-provider-verifier]: https://github.com/pact-foundation/pact-provider-verifier
-[pyenv]: https://github.com/pyenv/pyenv
-[virtualenv]: http://python-guide-pt-br.readthedocs.io/en/latest/dev/virtualenvs/

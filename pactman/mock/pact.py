@@ -10,14 +10,14 @@ from ..mock.response import Response
 from .mock_server import getMockServer
 from .mock_urlopen import MockURLOpenHandler
 
-USE_MOCKING_SERVER = os.environ.get('PACT_USE_MOCKING_SERVER', 'no') == 'yes'
+USE_MOCKING_SERVER = os.environ.get("PACT_USE_MOCKING_SERVER", "no") == "yes"
 
 
 def ensure_pact_dir(pact_dir):
     if not os.path.exists(pact_dir):
         parent_dir = os.path.dirname(pact_dir)
         if not os.path.exists(parent_dir):
-            raise ValueError(f'Pact destination directory {pact_dir} does not exist')
+            raise ValueError(f"Pact destination directory {pact_dir} does not exist")
         os.mkdir(pact_dir)
 
 
@@ -43,12 +43,23 @@ class Pact(object):
     does match the defined interaction, it will respond with the text `Hello!`.
     """
 
-    HEADERS = {'X-Pact-Mock-Service': 'true'}
+    HEADERS = {"X-Pact-Mock-Service": "true"}
 
-    def __init__(self, consumer, provider, host_name='localhost', port=None,
-                 log_dir=None, ssl=False, sslcert=None, sslkey=None,
-                 pact_dir=None, version='2.0.0',
-                 file_write_mode='overwrite', use_mocking_server=USE_MOCKING_SERVER):
+    def __init__(
+        self,
+        consumer,
+        provider,
+        host_name="localhost",
+        port=None,
+        log_dir=None,
+        ssl=False,
+        sslcert=None,
+        sslkey=None,
+        pact_dir=None,
+        version="2.0.0",
+        file_write_mode="overwrite",
+        use_mocking_server=USE_MOCKING_SERVER,
+    ):
         """
         Constructor for Pact.
 
@@ -91,7 +102,7 @@ class Pact(object):
             HTTP server rather than patching urllib3 connections.
         :type use_mocking_server: bool
         """
-        self.scheme = 'https' if ssl else 'http'
+        self.scheme = "https" if ssl else "http"
         self.consumer = consumer
         self.file_write_mode = file_write_mode
         self.host_name = host_name
@@ -113,7 +124,9 @@ class Pact(object):
 
     @property
     def uri(self):
-        return '{scheme}://{host_name}:{port}'.format(host_name=self.host_name, port=self.port, scheme=self.scheme)
+        return "{scheme}://{host_name}:{port}".format(
+            host_name=self.host_name, port=self.port, scheme=self.scheme
+        )
 
     BASE_PORT_NUMBER = 8150
 
@@ -124,20 +137,20 @@ class Pact(object):
 
     def check_existing_file(self):
         # ensure destination directory exists
-        if self.file_write_mode == 'never':
+        if self.file_write_mode == "never":
             return
         if self._pact_dir_checked:
             return
         self._pact_dir_checked = True
         ensure_pact_dir(self.pact_dir)
-        if self.file_write_mode == 'overwrite':
+        if self.file_write_mode == "overwrite":
             if os.path.exists(self.pact_json_filename):
                 os.remove(self.pact_json_filename)
 
     @property
     def pact_json_filename(self):
         self.check_existing_file()
-        return os.path.join(self.pact_dir, f'{self.consumer.name}-{self.provider.name}-pact.json')
+        return os.path.join(self.pact_dir, f"{self.consumer.name}-{self.provider.name}-pact.json")
 
     def given(self, provider_state, **params):
         """
@@ -186,15 +199,17 @@ class Pact(object):
             return self
 
         if self.semver["major"] < 3:
-            provider_state_key = 'providerState'
+            provider_state_key = "providerState"
             if not isinstance(provider_state, str):
-                raise ValueError('pact v2 provider states must be strings')
+                raise ValueError("pact v2 provider states must be strings")
         else:
-            provider_state_key = 'providerStates'
+            provider_state_key = "providerStates"
             if isinstance(provider_state, str):
-                provider_state = [{'name': provider_state, 'params': params}]
+                provider_state = [{"name": provider_state, "params": params}]
             elif not isinstance(provider_state, list):
-                raise ValueError('pact v3+ provider states must be lists of {name: "", params: {}} specs')
+                raise ValueError(
+                    'pact v3+ provider states must be lists of {name: "", params: {}} specs'
+                )
         self._interactions.insert(0, {provider_state_key: provider_state})
         return self
 
@@ -211,10 +226,10 @@ class Pact(object):
         :rtype: Pact
         """
         if self.semver["major"] < 3:
-            raise ValueError('pact v2 only allows a single provider state')
+            raise ValueError("pact v2 only allows a single provider state")
         elif not self._interactions:
-            raise ValueError('only invoke and_given() after given()')
-        self._interactions[-1]['providerStates'].append({'name': provider_state, 'params': params})
+            raise ValueError("only invoke and_given() after given()")
+        self._interactions[-1]["providerStates"].append({"name": provider_state, "params": params})
         return self
 
     def setup(self):
@@ -243,7 +258,7 @@ class Pact(object):
         :type scenario: basestring
         :rtype: Pact
         """
-        self._interactions[0]['description'] = scenario
+        self._interactions[0]["description"] = scenario
         return self
 
     def verify(self):
@@ -286,8 +301,9 @@ class Pact(object):
             for k, v in query.items():
                 if isinstance(v, str):
                     query[k] = [v]
-        self._interactions[0]['request'] = Request(
-            method, path, body=body, headers=headers, query=query).json(self.version)
+        self._interactions[0]["request"] = Request(
+            method, path, body=body, headers=headers, query=query
+        ).json(self.version)
         return self
 
     def will_respond_with(self, status, headers=None, body=None):
@@ -303,9 +319,9 @@ class Pact(object):
         :type body: Matcher, dict, list, basestring, or None
         :rtype: Pact
         """
-        self._interactions[0]['response'] = Response(status,
-                                                     headers=headers,
-                                                     body=body).json(self.version)
+        self._interactions[0]["response"] = Response(status, headers=headers, body=body).json(
+            self.version
+        )
         return self
 
     _auto_mocked = False

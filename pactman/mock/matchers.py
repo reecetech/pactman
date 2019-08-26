@@ -51,7 +51,7 @@ class EachLike(Matcher):
         """
         self.matcher = matcher
         if minimum < 1:
-            raise AssertionError('Minimum must be greater than or equal to 1')
+            raise AssertionError("Minimum must be greater than or equal to 1")
         self.minimum = minimum
 
     def ruby_protocol(self):
@@ -63,12 +63,13 @@ class EachLike(Matcher):
         :rtype: dict
         """
         return {
-            'json_class': 'Pact::ArrayLike',
-            'contents': generate_ruby_protocol(self.matcher),
-            'min': self.minimum}
+            "json_class": "Pact::ArrayLike",
+            "contents": generate_ruby_protocol(self.matcher),
+            "min": self.minimum,
+        }
 
     def generate_matching_rule_v3(self):
-        return {'matchers': [{'match': 'type', 'min': self.minimum}]}
+        return {"matchers": [{"match": "type", "min": self.minimum}]}
 
 
 class Like(Matcher):
@@ -103,12 +104,11 @@ class Like(Matcher):
             ignored.
         :type matcher: None, list, dict, int, float, str, Matcher
         """
-        valid_types = (
-            type(None), list, dict, int, float, str, Matcher)
+        valid_types = (type(None), list, dict, int, float, str, Matcher)
 
-        assert isinstance(matcher, valid_types), (
-            "matcher must be one of '{}', got '{}'".format(
-                valid_types, type(matcher)))
+        assert isinstance(matcher, valid_types), "matcher must be one of '{}', got '{}'".format(
+            valid_types, type(matcher)
+        )
 
         self.matcher = matcher
 
@@ -121,11 +121,12 @@ class Like(Matcher):
         :rtype: dict
         """
         return {
-            'json_class': 'Pact::SomethingLike',
-            'contents': generate_ruby_protocol(self.matcher)}
+            "json_class": "Pact::SomethingLike",
+            "contents": generate_ruby_protocol(self.matcher),
+        }
 
     def generate_matching_rule_v3(self):
-        return {'matchers': [{'match': 'type'}]}
+        return {"matchers": [{"match": "type"}]}
 
 
 # Remove SomethingLike in major version 1.0.0
@@ -176,16 +177,15 @@ class Term(Matcher):
         :rtype: dict
         """
         return {
-            'json_class': 'Pact::Term',
-            'data': {
-                'generate': self.generate,
-                'matcher': {
-                    'json_class': 'Regexp',
-                    'o': 0,
-                    's': self.matcher}}}
+            "json_class": "Pact::Term",
+            "data": {
+                "generate": self.generate,
+                "matcher": {"json_class": "Regexp", "o": 0, "s": self.matcher},
+            },
+        }
 
     def generate_matching_rule_v3(self):
-        return {'matchers': [{'match': 'regex', 'regex': self.matcher}]}
+        return {"matchers": [{"match": "regex", "regex": self.matcher}]}
 
 
 class Equals(Matcher):
@@ -223,12 +223,14 @@ class Equals(Matcher):
         :type matcher: None, list, dict, int, float, str
         """
         valid_types = (type(None), list, dict, int, float, str)
-        assert isinstance(matcher, valid_types), f"matcher must be one of '{valid_types}', got '{type(matcher)}'"
+        assert isinstance(
+            matcher, valid_types
+        ), f"matcher must be one of '{valid_types}', got '{type(matcher)}'"
 
         self.matcher = matcher
 
     def generate_matching_rule_v3(self):
-        return {'matchers': [{'match': 'equality'}]}
+        return {"matchers": [{"match": "equality"}]}
 
 
 class Includes(Matcher):
@@ -272,7 +274,7 @@ class Includes(Matcher):
         self.generate = generate
 
     def generate_matching_rule_v3(self):
-        return {'matchers': [{'match': 'include', 'value': self.matcher}]}
+        return {"matchers": [{"match": "include", "value": self.matcher}]}
 
 
 def generate_ruby_protocol(term):
@@ -295,13 +297,14 @@ def generate_ruby_protocol(term):
     elif issubclass(term.__class__, (Matcher,)):
         return term.ruby_protocol()
     else:
-        raise ValueError('Unknown type: %s' % type(term))
+        raise ValueError("Unknown type: %s" % type(term))
 
 
 # For backwards compatiblity with test code that uses pact-python to declare pacts,
 # allow the various classes from that package to also be used to define rules
 try:
     import pact as pact_python
+
     LIKE_CLASSES = (Like, pact_python.Like)
     EACHLIKE_CLASSES = (EachLike, pact_python.EachLike)
     TERM_CLASSES = (Term, pact_python.Term)
@@ -344,47 +347,47 @@ def get_generated_values(input):  # noqa: C901
     elif isinstance(input, Includes):
         return input.generate
     else:
-        raise ValueError('Unknown type: %s' % type(input))
+        raise ValueError("Unknown type: %s" % type(input))
 
 
 # this function is long and complex (C901) because it has to handle the pact-python
 # types :-(
 def get_matching_rules_v2(input, path):  # noqa: C901
-    '''Turn a matcher into the matchingRules structure for pact JSON.
+    """Turn a matcher into the matchingRules structure for pact JSON.
 
     This is done recursively, adding new paths as new matching rules
     are encountered.
-    '''
+    """
     if input is None or isinstance(input, (str, int, float, bool)):
         return {}
     if isinstance(input, dict):
         rules = {}
         for k, v in input.items():
-            sub_path = path + '.' + k
+            sub_path = path + "." + k
             rules.update(get_matching_rules_v2(v, sub_path))
         return rules
     if isinstance(input, list):
         rules = {}
         for i, v in enumerate(input):
-            sub_path = path + '[*]'
+            sub_path = path + "[*]"
             rules.update(get_matching_rules_v2(v, sub_path))
         return rules
     if isinstance(input, LIKE_CLASSES):
-        rules = {path: {'match': 'type'}}
+        rules = {path: {"match": "type"}}
         rules.update(get_matching_rules_v2(input.matcher, path))
         return rules
     if isinstance(input, EACHLIKE_CLASSES):
-        rules = {path: {'match': 'type', 'min': input.minimum}}
+        rules = {path: {"match": "type", "min": input.minimum}}
         rules.update(get_matching_rules_v2(input.matcher, path))
         return rules
     if isinstance(input, TERM_CLASSES):
-        return {path: {'regex': input.matcher}}
+        return {path: {"regex": input.matcher}}
     if isinstance(input, Equals):
-        raise Equals.NotAllowed(f'Equals() cannot be used in pact version 2')
+        raise Equals.NotAllowed(f"Equals() cannot be used in pact version 2")
     if isinstance(input, Includes):
-        raise Includes.NotAllowed(f'Includes() cannot be used in pact version 2')
+        raise Includes.NotAllowed(f"Includes() cannot be used in pact version 2")
 
-    raise ValueError('Unknown type: %s' % type(input))
+    raise ValueError("Unknown type: %s" % type(input))
 
 
 class MatchingRuleV3(dict):
@@ -395,23 +398,23 @@ class MatchingRuleV3(dict):
             return
         if self.handle_pact_python_types(input, path):
             return
-        raise ValueError('Unknown type: %s' % type(input))
+        raise ValueError("Unknown type: %s" % type(input))
 
     def handle_basic_types(self, input, path):
         if input is None or isinstance(input, (str, int, float, bool)):
             return True
         if isinstance(input, dict):
             for k, v in input.items():
-                self.generate(v, path + '.' + k)
+                self.generate(v, path + "." + k)
             return True
         if isinstance(input, list):
             for v in input:
-                self.generate(v, path + '[*]')
+                self.generate(v, path + "[*]")
             return True
         return False
 
     def handle_pactman_types(self, input, path):
-        if not hasattr(input, 'generate_matching_rule_v3'):
+        if not hasattr(input, "generate_matching_rule_v3"):
             return False
         self[path] = input.generate_matching_rule_v3()
         if isinstance(input.matcher, (list, dict)):
@@ -423,13 +426,13 @@ class MatchingRuleV3(dict):
             return False
 
         if isinstance(input, pact_python.Like):
-            self[path] = {'matchers': [{'match': 'type'}]}
+            self[path] = {"matchers": [{"match": "type"}]}
             self.generate(input.matcher, path)
         elif isinstance(input, pact_python.EachLike):
-            self[path] = {'matchers': [{'match': 'type', 'min': input.minimum}]}
+            self[path] = {"matchers": [{"match": "type", "min": input.minimum}]}
             self.generate(input.matcher, path)
         elif isinstance(input, pact_python.Term):
-            self[path] = {'matchers': [{'match': 'regex', 'regex': input.matcher}]}
+            self[path] = {"matchers": [{"match": "regex", "regex": input.matcher}]}
         else:
             return False
 
@@ -437,11 +440,11 @@ class MatchingRuleV3(dict):
 
 
 def get_matching_rules_v3(input, path):
-    '''Turn a matcher into the matchingRules structure for pact JSON.
+    """Turn a matcher into the matchingRules structure for pact JSON.
 
     This is done recursively, adding new paths as new matching rules
     are encountered.
-    '''
+    """
     rules = MatchingRuleV3()
     rules.generate(input, path)
     return rules
