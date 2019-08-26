@@ -35,8 +35,7 @@ def pytest_addoption(parser):
     group.addoption("--pact-provider-version", default=None,
                     help="provider version to use when reporting pact results to pact broker")
     group.addoption("--pact-allow-fail", default=False, action="store_true",
-                    help="do not fail the pytest run if any pacts fail verification",
-)
+                    help="do not fail the pytest run if any pacts fail verification")
 # Future options to be implemented. Listing them here so naming consistency can be a thing.
 #    group.addoption("--pact-publish-pacts", action="store_true", default=False,
 #                    help="publish pacts to pact broker")
