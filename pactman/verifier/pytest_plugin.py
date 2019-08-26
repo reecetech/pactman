@@ -1,14 +1,14 @@
 import glob
 import logging
+import os
 import warnings
 
 import pytest
-import os
 from _pytest.outcomes import Failed
 from _pytest.reports import TestReport
 
 from .broker_pact import BrokerPact, BrokerPacts, PactBrokerConfig
-from .result import log, PytestResult
+from .result import PytestResult, log
 
 
 def pytest_addoption(parser):
@@ -34,6 +34,9 @@ def pytest_addoption(parser):
                     help="report pact verification results to pact broker")
     group.addoption("--pact-provider-version", default=None,
                     help="provider version to use when reporting pact results to pact broker")
+    group.addoption("--pact-allow-fail", default=False, action="store_true",
+                    help="do not fail the pytest run if any pacts fail verification",
+)
 # Future options to be implemented. Listing them here so naming consistency can be a thing.
 #    group.addoption("--pact-publish-pacts", action="store_true", default=False,
 #                    help="publish pacts to pact broker")
@@ -162,7 +165,19 @@ def pytest_runtest_makereport(item, call):
     # use our custom TestReport subclass if we're reporting on a pact verification call
     interaction = item.funcargs['pact_verifier'].interaction
     report = PactTestReport.from_item_and_call(item, call, interaction)
+    if report.failed and item.config.getoption("pact_allow_fail"):
+        # convert the fail into an "expected" fail, which allows the run to pass
+        report.wasxfail = True
+        report.outcome = "passed"
     return report
+
+
+def pytest_report_teststatus(report, config):
+    if not hasattr(report, "pact_interaction"):
+        return
+    if hasattr(report, "wasxfail"):
+        # wasxfail usually displays an "X" but since it's not *expected* to fail an "f" is a little clearer
+        return "ignore fail", "f", "IGNORE_FAIL"
 
 
 @pytest.fixture()
