@@ -13,29 +13,50 @@ from .result import PytestResult, log
 
 def pytest_addoption(parser):
     group = parser.getgroup("pact specific options (pactman)")
-    group.addoption("--pact-files", default=None,
-                    help="pact JSON files to verify (wildcards allowed)")
-    group.addoption("--pact-broker-url", default='',
-                    help="pact broker URL")
-    group.addoption("--pact-broker-token", default='',
-                    help="pact broker bearer token")
-    group.addoption("--pact-provider-name", default=None,
-                    help="pact name of provider being verified")
-    group.addoption("--pact-consumer-name", default=None,
-                    help="consumer name to limit pact verification to - "
-                         "DEPRECATED, use --pact-verify-consumer instead")
-    group.addoption("--pact-verify-consumer", default=None,
-                    help="consumer name to limit pact verification to")
-    group.addoption("--pact-verify-consumer-tag", metavar='TAG', action='append',
-                    help='limit broker pacts verified to those matching the tag. May be '
-                         'specified multiple times in which case pacts matching any of these '
-                         'tags will be verified.')
-    group.addoption("--pact-publish-results", action="store_true", default=False,
-                    help="report pact verification results to pact broker")
-    group.addoption("--pact-provider-version", default=None,
-                    help="provider version to use when reporting pact results to pact broker")
-    group.addoption("--pact-allow-fail", default=False, action="store_true",
-                    help="do not fail the pytest run if any pacts fail verification")
+    group.addoption(
+        "--pact-files", default=None, help="pact JSON files to verify (wildcards allowed)"
+    )
+    group.addoption("--pact-broker-url", default="", help="pact broker URL")
+    group.addoption("--pact-broker-token", default="", help="pact broker bearer token")
+    group.addoption(
+        "--pact-provider-name", default=None, help="pact name of provider being verified"
+    )
+    group.addoption(
+        "--pact-consumer-name",
+        default=None,
+        help="consumer name to limit pact verification to - "
+        "DEPRECATED, use --pact-verify-consumer instead",
+    )
+    group.addoption(
+        "--pact-verify-consumer", default=None, help="consumer name to limit pact verification to"
+    )
+    group.addoption(
+        "--pact-verify-consumer-tag",
+        metavar="TAG",
+        action="append",
+        help="limit broker pacts verified to those matching the tag. May be "
+        "specified multiple times in which case pacts matching any of these "
+        "tags will be verified.",
+    )
+    group.addoption(
+        "--pact-publish-results",
+        action="store_true",
+        default=False,
+        help="report pact verification results to pact broker",
+    )
+    group.addoption(
+        "--pact-provider-version",
+        default=None,
+        help="provider version to use when reporting pact results to pact broker",
+    )
+    group.addoption(
+        "--pact-allow-fail",
+        default=False,
+        action="store_true",
+        help="do not fail the pytest run if any pacts fail verification",
+    )
+
+
 # Future options to be implemented. Listing them here so naming consistency can be a thing.
 #    group.addoption("--pact-publish-pacts", action="store_true", default=False,
 #                    help="publish pacts to pact broker")
@@ -49,20 +70,20 @@ def pytest_addoption(parser):
 
 
 def get_broker_url(config):
-    return config.getoption('pact_broker_url') or os.environ.get('PACT_BROKER_URL')
+    return config.getoption("pact_broker_url") or os.environ.get("PACT_BROKER_URL")
 
 
 # add the pact broker URL to the pytest output if running verbose
 def pytest_report_header(config):
-    if config.getoption('verbose') > 0:
-        location = get_broker_url(config) or config.getoption('pact_files')
-        return [f'Loading pacts from {location}']
+    if config.getoption("verbose") > 0:
+        location = get_broker_url(config) or config.getoption("pact_files")
+        return [f"Loading pacts from {location}"]
 
 
 def pytest_configure(config):
-    logging.getLogger('pactman').handlers = []
-    logging.basicConfig(format='%(message)s')
-    verbosity = config.getoption('verbose')
+    logging.getLogger("pactman").handlers = []
+    logging.basicConfig(format="%(message)s")
+    verbosity = config.getoption("verbose")
     if verbosity > 0:
         log.setLevel(logging.DEBUG)
 
@@ -108,37 +129,48 @@ def test_id(identifier):
 
 
 def pytest_generate_tests(metafunc):
-    if 'pact_verifier' in metafunc.fixturenames:
+    if "pact_verifier" in metafunc.fixturenames:
         broker_url = get_broker_url(metafunc.config)
         if not broker_url:
-            pact_files = get_pact_files(metafunc.config.getoption('pact_files'))
+            pact_files = get_pact_files(metafunc.config.getoption("pact_files"))
             if not pact_files:
-                raise ValueError('need a --pact-broker-url or --pact-files option')
-            metafunc.parametrize("pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True)
+                raise ValueError("need a --pact-broker-url or --pact-files option")
+            metafunc.parametrize(
+                "pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True
+            )
         else:
-            provider_name = metafunc.config.getoption('pact_provider_name')
+            provider_name = metafunc.config.getoption("pact_provider_name")
             if not provider_name:
-                raise ValueError('--pact-broker-url requires the --pact-provider-name option')
-            broker = PactBrokerConfig(broker_url, metafunc.config.getoption('pact_broker_token'),
-                                      metafunc.config.getoption('pact_consumer_version_tag', []))
-            broker_pacts = BrokerPacts(provider_name, pact_broker=broker, result_factory=PytestResult)
+                raise ValueError("--pact-broker-url requires the --pact-provider-name option")
+            broker = PactBrokerConfig(
+                broker_url,
+                metafunc.config.getoption("pact_broker_token"),
+                metafunc.config.getoption("pact_consumer_version_tag", []),
+            )
+            broker_pacts = BrokerPacts(
+                provider_name, pact_broker=broker, result_factory=PytestResult
+            )
             pacts = broker_pacts.consumers()
-            filter_consumer_name = metafunc.config.getoption('pact_verify_consumer')
+            filter_consumer_name = metafunc.config.getoption("pact_verify_consumer")
             if not filter_consumer_name:
-                filter_consumer_name = metafunc.config.getoption('pact_consumer_name')
+                filter_consumer_name = metafunc.config.getoption("pact_consumer_name")
                 if filter_consumer_name:
-                    warnings.warn('The --pact-consumer-name command-line option is deprecated '
-                                  'and will be removed in the 3.0.0 release.', DeprecationWarning)
+                    warnings.warn(
+                        "The --pact-consumer-name command-line option is deprecated "
+                        "and will be removed in the 3.0.0 release.",
+                        DeprecationWarning,
+                    )
             if filter_consumer_name:
                 pacts = [pact for pact in pacts if pact.consumer == filter_consumer_name]
             metafunc.parametrize("pact_verifier", flatten_pacts(pacts), ids=test_id, indirect=True)
 
 
 class PactTestReport(TestReport):
-    '''Custom TestReport that allows us to attach an interaction to the result, and
+    """Custom TestReport that allows us to attach an interaction to the result, and
     then display the interaction's verification result ouput as well as the traceback
     of the failure.
-    '''
+    """
+
     @classmethod
     def from_item_and_call(cls, item, call, interaction):
         report = super().from_item_and_call(item, call)
@@ -148,21 +180,21 @@ class PactTestReport(TestReport):
         return report
 
     def toterminal(self, out):
-        out.line('Pact failure details:', bold=True)
+        out.line("Pact failure details:", bold=True)
         for text, kw in self.pact_interaction.result.results_for_terminal():
             out.line(text, **kw)
         if self.verbosity > 0:
-            out.line('Traceback:', bold=True)
+            out.line("Traceback:", bold=True)
             return super().toterminal(out)
         else:
-            out.line('Traceback not shown, use pytest -v to show it')
+            out.line("Traceback not shown, use pytest -v to show it")
 
 
 def pytest_runtest_makereport(item, call):
-    if call.when != 'call' or 'pact_verifier' not in getattr(item, 'fixturenames', []):
+    if call.when != "call" or "pact_verifier" not in getattr(item, "fixturenames", []):
         return
     # use our custom TestReport subclass if we're reporting on a pact verification call
-    interaction = item.funcargs['pact_verifier'].interaction
+    interaction = item.funcargs["pact_verifier"].interaction
     report = PactTestReport.from_item_and_call(item, call, interaction)
     if report.failed and item.config.getoption("pact_allow_fail"):
         # convert the fail into an "expected" fail, which allows the run to pass
@@ -182,8 +214,11 @@ def pytest_report_teststatus(report, config):
 @pytest.fixture()
 def pact_verifier(pytestconfig, request):
     interaction, consumer = request.param
-    p = PytestPactVerifier(pytestconfig.getoption('pact_publish_results'),
-                           pytestconfig.getoption('pact_provider_version'),
-                           interaction, consumer)
+    p = PytestPactVerifier(
+        pytestconfig.getoption("pact_publish_results"),
+        pytestconfig.getoption("pact_provider_version"),
+        interaction,
+        consumer,
+    )
     yield p
     p.finish()

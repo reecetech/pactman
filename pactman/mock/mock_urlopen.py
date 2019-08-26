@@ -49,7 +49,9 @@ class MonkeyPatcher:
         self.patched = True
 
     def clear(self):
-        urllib3.poolmanager.pool_classes_by_scheme["http"] = urllib3.connectionpool.HTTPConnectionPool
+        urllib3.poolmanager.pool_classes_by_scheme[
+            "http"
+        ] = urllib3.connectionpool.HTTPConnectionPool
         self.patched = False
 
 
@@ -81,7 +83,9 @@ class MockURLOpenHandler(PactRequestHandler):
         try:
             interaction = self.interactions.pop()
         except IndexError:
-            raise AssertionError(f'Request at {path} received but no interaction registered') from None
+            raise AssertionError(
+                f"Request at {path} received but no interaction registered"
+            ) from None
         return interaction
 
     def handle_failure(self, reason):
@@ -92,13 +96,15 @@ class MockURLOpenHandler(PactRequestHandler):
 
     def respond_for_interaction(self, interaction):
         headers = {}
-        if 'headers' in interaction['response']:
-            headers.update(interaction['response']['headers'])
-        if 'body' in interaction['response']:
-            body = self.handle_response_encoding(interaction['response'], headers)
+        if "headers" in interaction["response"]:
+            headers.update(interaction["response"]["headers"])
+        if "body" in interaction["response"]:
+            body = self.handle_response_encoding(interaction["response"], headers)
         else:
-            body = b''
-        return HTTPResponse(body=io.BytesIO(body),
-                            status=interaction['response']['status'],
-                            preload_content=False,
-                            headers=headers)
+            body = b""
+        return HTTPResponse(
+            body=io.BytesIO(body),
+            status=interaction["response"]["status"],
+            preload_content=False,
+            headers=headers,
+        )

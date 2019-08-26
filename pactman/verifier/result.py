@@ -21,24 +21,24 @@ class Result:
         raise NotImplementedError()
 
     def fail(self, message, path=None):
-        raise NotImplementedError()   # pragma: no cover
+        raise NotImplementedError()  # pragma: no cover
 
 
 class LoggedResult(Result):
     def start(self, interaction):
         super().start(interaction)
-        log.info(f'Verifying {interaction}')
+        log.info(f"Verifying {interaction}")
 
     def warn(self, message):
-        log.warning(' ' + message)
+        log.warning(" " + message)
 
     def fail(self, message, path=None):
         self.success = self.FAIL
-        log.warning(' ' + message)
+        log.warning(" " + message)
         return not message
 
 
-class PytestResult(Result):   # pragma: no cover
+class PytestResult(Result):  # pragma: no cover
     def __init__(self, *, level=logging.WARNING):
         self.records = []
         self.level = level
@@ -46,7 +46,7 @@ class PytestResult(Result):   # pragma: no cover
 
     def start(self, interaction):
         super().start(interaction)
-        log = logging.getLogger('pactman')
+        log = logging.getLogger("pactman")
         log.handlers = [self]
         log.setLevel(logging.DEBUG)
         log.propagate = False
@@ -57,6 +57,7 @@ class PytestResult(Result):   # pragma: no cover
 
     def fail(self, message, path=None):
         from _pytest.outcomes import Failed
+
         __tracebackhide__ = True
         self.success = self.FAIL
         log.error(message)
@@ -83,22 +84,22 @@ class CaptureResult(Result):
 
     def start(self, interaction):
         super().start(interaction)
-        log = logging.getLogger('pactman')
+        log = logging.getLogger("pactman")
         log.handlers = [self]
         log.setLevel(logging.DEBUG)
         self.messages[:] = []
         if self.current_consumer != interaction.pact.consumer:
-            print(f'{Style.BRIGHT}Consumer: {interaction.pact.consumer}')
+            print(f"{Style.BRIGHT}Consumer: {interaction.pact.consumer}")
             self.current_consumer = interaction.pact.consumer
-        print(f'Request: "{interaction.description}" ... ', end='')
+        print(f'Request: "{interaction.description}" ... ', end="")
 
     def end(self):
         if self.success:
-            print(Fore.GREEN + 'PASSED')
+            print(Fore.GREEN + "PASSED")
         else:
-            print(Fore.RED + 'FAILED')
+            print(Fore.RED + "FAILED")
         if self.messages:
-            print((Fore.RESET + '\n').join(self.messages))
+            print((Fore.RESET + "\n").join(self.messages))
 
     def warn(self, message):
         log.warning(message)
@@ -106,14 +107,14 @@ class CaptureResult(Result):
     def fail(self, message, path=None):
         self.success = self.FAIL
         if path:
-            message += ' at ' + format_path(path)
+            message += " at " + format_path(path)
         log.error(message)
         return not message
 
     def handle(self, record):
-        color = ''
+        color = ""
         if record.levelno >= logging.ERROR:
             color = Fore.RED
         elif record.levelno >= logging.WARNING:
             color = Fore.YELLOW
-        self.messages.append(' ' + color + record.msg)
+        self.messages.append(" " + color + record.msg)

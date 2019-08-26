@@ -20,6 +20,10 @@ response = FakeResponse
 with open(sys.argv[2]) as file:
     case = json.load(file)
 
-    pact = Mock(provider='SpamProvider', consumer='SpamConsumer', version=version,
-                semver=semver.parse(version))
-    verifier(pact, case['expected'], result).verify(response(case['actual']))
+    pact = Mock(
+        provider="SpamProvider",
+        consumer="SpamConsumer",
+        version=version,
+        semver=semver.parse(version),
+    )
+    verifier(pact, case["expected"], result).verify(response(case["actual"]))
