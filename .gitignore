@@ -58,8 +58,10 @@ local_settings.py
 instance/
 .webassets-cache
 
-# Intellij stuff
+# Editor stuff
 .idea/
+.vscode/
+.history/
 
 # Scrapy stuff:
 .scrapy
@@ -85,6 +87,7 @@ celerybeat-schedule
 # virtualenv
 venv/
 ENV/
+.venv/
 
 # Spyder project settings
 .spyderproject

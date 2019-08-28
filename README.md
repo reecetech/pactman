@@ -16,6 +16,15 @@ Contains code originally from the [pact-python](https://github.com/pact-foundati
 pactman is maintained by the [ReeceTech](https://www.reecetech.com.au/) team as part of their toolkit to
 keep their large (and growing) microservices architecture under control.
 
+* [How to use pactman](#how-to-use-pactman)
+  * [Installation](#installation)
+  * [Writing a Pact](#writing-a-pact)
+  * [Writing the Consumer Test](#writing-the-consumer-test)
+  * [Expecting Variable Content](#expecting-variable-content)
+  * [Verifying Pacts Against a Service](#verifying-pacts-against-a-service)
+* [Development](#development)
+  * [Release History](#release-history)
+
 ## pactman vs pact-python
 
 The key difference is all functionality is implemented in Python, rather than shelling out or forking
