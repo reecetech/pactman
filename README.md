@@ -1,6 +1,6 @@
 # pactman
 
-[![](https://img.shields.io/pypi/v/pactman.svg)](https://pypi.org/project/pactman/)
+[![](https://img.shields.io/pypi/v/pactman.svg)](https://pypi.org/project/pactman/) [![](https://travis-ci.org/reecetech/pactman.svg?branch=master)](https://travis-ci.org/reecetech/pactman.svg?branch=master)
 
 Python version of Pact mocking, generation and verification.
 
