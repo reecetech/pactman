@@ -1,0 +1,11 @@
+language: python
+dist: xenial
+sudo: required
+matrix:
+  include:
+    - python: 3.6
+      env: TOXENV=py36
+install:
+  - python3 -m pip install tox
+script:
+  - tox
