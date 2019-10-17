@@ -276,7 +276,7 @@ class Pact(object):
             # clear the interactions once we've attempted to verify, allowing re-use of the mock
             self._interactions[:] = []
 
-    def with_request(self, method, path, body=None, headers=None, query=None):
+    def with_request(self, method, path, body=None, headers=None, query=None, cookies=None):
         """
         Define the request the request that the client is expected to perform.
 
@@ -294,6 +294,9 @@ class Pact(object):
             a dict of keys and values, or a URL encoded string.
             Defaults to None.
         :type query: dict, str, or None
+        :param cookies: The cookies the client is expected to include on with
+            this request. Defaults to None.
+        :type cookies: dict or None
         :rtype: Pact
         """
         # ensure all query values are lists of values
@@ -302,7 +305,7 @@ class Pact(object):
                 if isinstance(v, str):
                     query[k] = [v]
         self._interactions[0]["request"] = Request(
-            method, path, body=body, headers=headers, query=query
+            method, path, body=body, headers=headers, query=query, cookies=cookies
         ).json(self.version)
         return self
 

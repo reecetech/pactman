@@ -93,6 +93,7 @@ class PactTestCase(TestCase):
                 body={"key": "value"},
                 headers={"Accept": "application/json"},
                 query="search=test",
+                cookies={'some-cookie': "cookie value"},
             )
             .will_respond_with(200, body="success", headers={"Content-Type": "application/json"})
         )
@@ -111,6 +112,7 @@ class PactTestCase(TestCase):
                 "method": "GET",
                 "body": {"key": "value"},
                 "headers": {"Accept": "application/json"},
+                "cookies": {"some-cookie": "cookie value"},
                 "query": "search=test",
             },
         )
@@ -130,6 +132,7 @@ class PactTestCase(TestCase):
                 body={"key": "value"},
                 headers={"Accept": "application/json"},
                 query={"search": ["test"]},
+                cookies={"some-cookie": "cookie value"},
             )
             .will_respond_with(200, body="success", headers={"Content-Type": "application/json"})
         )
@@ -148,6 +151,7 @@ class PactTestCase(TestCase):
                 "method": "GET",
                 "body": {"key": "value"},
                 "headers": {"Accept": "application/json"},
+                "cookies": {"some-cookie": "cookie value"},
                 "query": {"search": ["test"]},
             },
         )

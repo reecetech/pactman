@@ -141,7 +141,7 @@ def test_interaction_verify_get(monkeypatch, mock_pact, mock_result_factory, fak
     i.verify("http://provider.example/", "http://provider.example/pact-setup/")
 
     requests.post.assert_not_called()
-    requests.get.assert_called_with("http://provider.example/users-service/user/alex", headers={})
+    requests.get.assert_called_with("http://provider.example/users-service/user/alex", headers={}, cookies={})
     i.response.verify.assert_called()
 
 
@@ -166,7 +166,7 @@ def test_interaction_verify_qs(monkeypatch, mock_pact, mock_result_factory, fake
     i.verify("http://provider.example/", "http://provider.example/pact-setup/")
 
     requests.get.assert_called_with(
-        "http://provider.example/users-service/user/alex", params=dict(a=["b"], c=["d"]), headers={}
+        "http://provider.example/users-service/user/alex", params=dict(a=["b"], c=["d"]), headers={}, cookies={}
     )
     i.response.verify.assert_called()
 
@@ -182,7 +182,7 @@ def test_interaction_verify_post(monkeypatch, mock_pact, mock_result_factory, fa
 
     requests.get.assert_not_called()
     requests.post.assert_called_with(
-        "http://provider.example/users-service/user/alex", json="spam", headers={}
+        "http://provider.example/users-service/user/alex", json="spam", headers={}, cookies={}
     )
     i.response.verify.assert_called()
 
@@ -213,7 +213,7 @@ def test_interaction_verify_delete(monkeypatch, mock_pact, mock_result_factory):
     i.verify("http://provider.example/", "http://provider.example/pact-setup/")
 
     requests.delete.assert_called_with(
-        "http://provider.example/diary-notes/diary-note/1", headers={}
+        "http://provider.example/diary-notes/diary-note/1", headers={}, cookies={}
     )
     i.response.verify.assert_called()
 
@@ -229,7 +229,7 @@ def test_interaction_verify_put(monkeypatch, mock_pact, mock_result_factory, fak
 
     requests.get.assert_not_called()
     requests.put.assert_called_with(
-        "http://provider.example/users-service/user/alex", json="spam", headers={}
+        "http://provider.example/users-service/user/alex", json="spam", headers={}, cookies={}
     )
     i.response.verify.assert_called()
 
@@ -258,7 +258,7 @@ def test_interaction_verify_patch(monkeypatch, mock_pact, mock_result_factory, f
     i.verify("http://provider.example/", "http://provider.example/pact-setup/")
     requests.get.assert_not_called()
     requests.patch.assert_called_with(
-        "http://provider.example/users-service/user/alex", json="spam", headers={}
+        "http://provider.example/users-service/user/alex", json="spam", headers={}, cookies={}
     )
     i.response.verify.assert_called()
 
@@ -421,6 +421,7 @@ def test_provider_state_uses_custom_headers(
     requests.get.assert_called_with(
         "http://provider.example/users-service/user/alex",
         headers={"request_header": "value", "some_header": "some_header"},
+        cookies={}
     )
     i.response.verify.assert_called()
 

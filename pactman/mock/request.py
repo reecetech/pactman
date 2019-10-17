@@ -4,7 +4,7 @@ from .matchers import get_generated_values, get_matching_rules_v2, get_matching_
 class Request:
     """Represents an HTTP request and supports Matchers on its properties."""
 
-    def __init__(self, method, path, body=None, headers=None, query=""):
+    def __init__(self, method, path, body=None, headers=None, query="", cookies=None):
         """
         Create a new instance of Request.
 
@@ -18,11 +18,14 @@ class Request:
         :type headers: dict
         :param query: The URI query of the expected request.
         :type query: str or dict
+        :param cookies: The cookies of the expected request.
+        :type cookies: dict
         """
         self.method = method
         self.path = path
         self.body = body
         self.headers = headers
+        self.cookies = cookies
         self.query = query
 
     def json(self, spec_version):
@@ -37,6 +40,9 @@ class Request:
 
         if self.query:
             request["query"] = get_generated_values(self.query)
+
+        if self.cookies:
+            request["cookies"] = get_generated_values(self.cookies)
 
         if spec_version == "2.0.0":
             matchingRules = self.generate_v2_matchingRules()

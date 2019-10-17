@@ -71,10 +71,10 @@ class Interaction:
                 # version 2 spec used strings, version 3 uses objects
                 query = parse_qs(query)
             r = requests.get(
-                self._get_url(service_url), params=query, headers=self._request_headers
+                self._get_url(service_url), params=query, headers=self._request_headers, cookies=self._request_cookies
             )
         else:
-            r = requests.get(self._get_url(service_url), headers=self._request_headers)
+            r = requests.get(self._get_url(service_url), headers=self._request_headers, cookies=self._request_cookies)
         return self.response.verify(r)
 
     def service_HEAD(self, service_url):
@@ -84,10 +84,10 @@ class Interaction:
                 # version 2 spec used strings, version 3 uses objects
                 query = parse_qs(query)
             r = requests.head(
-                self._get_url(service_url), params=query, headers=self._request_headers
+                self._get_url(service_url), params=query, headers=self._request_headers, cookies=self._request_cookies
             )
         else:
-            r = requests.head(self._get_url(service_url), headers=self._request_headers)
+            r = requests.head(self._get_url(service_url), headers=self._request_headers, cookies=self._request_cookies)
         return self.response.verify(r)
 
     def service_POST(self, service_url):
@@ -96,12 +96,15 @@ class Interaction:
                 f"POST content type {self._content_type} not implemented in verifier"
             )
         r = requests.post(
-            self._get_url(service_url), json=self._request_payload, headers=self._request_headers
+            self._get_url(service_url),
+            json=self._request_payload,
+            headers=self._request_headers,
+            cookies=self._request_cookies
         )
         return self.response.verify(r)
 
     def service_DELETE(self, service_url):
-        r = requests.delete(self._get_url(service_url), headers=self._request_headers)
+        r = requests.delete(self._get_url(service_url), headers=self._request_headers, cookies=self._request_cookies)
         return self.response.verify(r)
 
     def service_PUT(self, service_url):
@@ -110,7 +113,10 @@ class Interaction:
                 f"PUT content type {self._content_type} not implemented in verifier"
             )
         r = requests.put(
-            self._get_url(service_url), json=self._request_payload, headers=self._request_headers
+            self._get_url(service_url),
+            json=self._request_payload,
+            headers=self._request_headers,
+            cookies=self._request_cookies
         )
         return self.response.verify(r)
 
@@ -120,7 +126,10 @@ class Interaction:
                 f"PATCH content type {self._content_type} not implemented in verifier"
             )
         r = requests.patch(
-            self._get_url(service_url), json=self._request_payload, headers=self._request_headers
+            self._get_url(service_url),
+            json=self._request_payload,
+            headers=self._request_headers,
+            cookies=self._request_cookies
         )
         return self.response.verify(r)
 
@@ -186,6 +195,10 @@ class Interaction:
         headers = dict(self.extra_provider_headers)
         headers.update(self.request.get("headers", {}))
         return headers
+
+    @property
+    def _request_cookies(self):
+        return self.request.get("cookies", {})
 
     @property
     def _request_payload(self):
