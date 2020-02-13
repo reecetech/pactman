@@ -135,5 +135,8 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler, PactRequestHandler):
     def do_PUT(self):
         self.run_request("PUT")
 
+    def do_PATCH(self):
+        self.run_request("PATCH")
+
     def log_message(self, format, *args):
         self.server.log.info("MockServer %s\n" % format % args)
