@@ -68,7 +68,7 @@ pip install pactman
 ## Writing a Pact
 Creating a complete contract is a two step process:
 
-1. Create a test on the consumer side that declares the expectations it has of the provider
+1. Create a unit test on the consumer side that declares the expectations it has of the provider
 2. Create a provider state that allows the contract to pass when replayed against the provider
 
 ## Writing the Consumer Test
@@ -77,7 +77,7 @@ If we have a method that communicates with one of our external services, which w
 `Provider`, and our product, `Consumer` is hitting an endpoint on `Provider` at
 `/users/<user>` to get information about a particular user.
 
-If the code to fetch a user looked like this:
+If the `Consumer`'s code to fetch a user looked like this:
 
 ```python
 import requests
@@ -87,7 +87,8 @@ def get_user(user_name):
     return response.json()
 ```
 
-Then `Consumer`'s contract test might look something like this:
+Then `Consumer`'s contract test is just a regular unit test, but *using pactman for mocking*,
+and might look something like this:
 
 ```python
 import unittest
