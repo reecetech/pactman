@@ -87,7 +87,7 @@ def get_user(user_name):
     return response.json()
 ```
 
-Then `Consumer`'s contract test is just a regular unit test, but *using pactman for mocking*,
+Then `Consumer`'s contract test is a regular unit test, but *using pactman for mocking*,
 and might look something like this:
 
 ```python
