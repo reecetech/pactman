@@ -145,7 +145,7 @@ def pytest_generate_tests(metafunc):
             broker = PactBrokerConfig(
                 broker_url,
                 metafunc.config.getoption("pact_broker_token"),
-                metafunc.config.getoption("pact_consumer_version_tag", []),
+                metafunc.config.getoption("pact_verify_consumer_tag", []),
             )
             broker_pacts = BrokerPacts(
                 provider_name, pact_broker=broker, result_factory=PytestResult
