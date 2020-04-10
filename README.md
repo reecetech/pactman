@@ -768,5 +768,5 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 [Pact documentation]: https://docs.pact.io/
 [Pact specification]: https://github.com/pact-foundation/pact-specification
 [Pact specification version 3]: https://github.com/pact-foundation/pact-specification/tree/version-3
-[Provider States]: https://docs.pact.io/documentation/provider_states.html
+[Provider States]: https://docs.pact.io/provider/using_provider_states_effectively
 [pact-provider-verifier]: https://github.com/pact-foundation/pact-provider-verifier
