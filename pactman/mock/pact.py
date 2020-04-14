@@ -124,9 +124,7 @@ class Pact(object):
 
     @property
     def uri(self):
-        return "{scheme}://{host_name}:{port}".format(
-            host_name=self.host_name, port=self.port, scheme=self.scheme
-        )
+        return f"{self.scheme}://{self.host_name}:{self.port}"
 
     BASE_PORT_NUMBER = 8150
 
