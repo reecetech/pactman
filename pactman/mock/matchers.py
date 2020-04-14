@@ -106,9 +106,9 @@ class Like(Matcher):
         """
         valid_types = (type(None), list, dict, int, float, str, Matcher)
 
-        assert isinstance(matcher, valid_types), "matcher must be one of '{}', got '{}'".format(
-            valid_types, type(matcher)
-        )
+        assert isinstance(
+            matcher, valid_types
+        ), f"matcher must be one of '{valid_types}', got '{type(matcher)}'"
 
         self.matcher = matcher
 
