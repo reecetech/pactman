@@ -95,9 +95,9 @@ class PytestPactVerifier:
         self.interaction = interaction
         self.consumer = consumer
 
-    def verify(self, provider_url, provider_setup):
+    def verify(self, provider_url, provider_setup, extra_provider_headers={}):
         try:
-            self.interaction.verify_with_callable_setup(provider_url, provider_setup)
+            self.interaction.verify_with_callable_setup(provider_url, provider_setup, extra_provider_headers)
         except (Failed, AssertionError) as e:
             raise Failed(str(e)) from None
 
