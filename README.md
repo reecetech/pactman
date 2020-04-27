@@ -594,6 +594,10 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
 
+2.27.0
+
+- Added PATCH support
+
 2.26.0
 
 - Allow pytest verification to specify `extra_provider_headers`
