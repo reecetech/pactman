@@ -46,7 +46,8 @@ class Interaction:
         finally:
             self.result.end()
 
-    def verify_with_callable_setup(self, service_url, provider_setup):
+    def verify_with_callable_setup(self, service_url, provider_setup, extra_provider_headers={}):
+        self.extra_provider_headers = extra_provider_headers
         self.result.start(self)
         try:
             try:
