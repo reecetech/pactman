@@ -510,6 +510,9 @@ def test_pacts(live_server, pact_verifier):
     pact_verifier.verify(live_server.url, provider_state)
 ```
 
+The `pact_verifier.verify` call may also take a third argument to supply additional HTTP headers
+to send to the server during verification - specify them as a dictionary.
+
 The test function may do any level of mocking and data setup using standard pytest fixtures - so mocking
 downstream APIs or other interactions within the provider may be done with standard monkeypatching.
 
@@ -590,6 +593,10 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 3.0.0 (FUTURE, DEPRECATION WARNINGS)
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
+
+2.26.0
+
+- Allow pytest verification to specify `extra_provider_headers`
 
 2.25.0
 
