@@ -596,6 +596,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 2.27.0
 
+- Fix typo in pytest plugin preventing `--pact-verify-consumer-tag` from working
 - Added PATCH support
 
 2.26.0
