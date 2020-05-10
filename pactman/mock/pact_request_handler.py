@@ -103,7 +103,7 @@ class PactRequestHandler:
         return json.dumps(response["body"]).encode(charset)
 
     def write_pact(self, interaction):
-        if self.pact.semver["major"] >= 3:
+        if self.pact.semver.major >= 3:
             provider_state_key = "providerStates"
         else:
             provider_state_key = "providerState"

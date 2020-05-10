@@ -3,7 +3,8 @@ from urllib.parse import parse_qs, urljoin
 
 import requests
 
-from .matching_rule import RuleFailed, fold_type, nice_type, rule_matchers_v2, rule_matchers_v3
+from .matching_rule import (RuleFailed, fold_type, nice_type, rule_matchers_v2,
+                            rule_matchers_v3)
 from .parse_header import parse_header
 from .paths import format_path
 
@@ -214,10 +215,10 @@ class ResponseVerifier:
         self.headers = interaction.get("headers", MISSING)
         self.body = interaction.get("body", MISSING)
         rules = interaction.get("matchingRules", {})
-        if pact.semver["major"] < 2:
+        if pact.semver.major < 2:
             # there are no matchingRules in v1
             self.matching_rules = {}
-        elif pact.semver["major"] < 3:
+        elif pact.semver.major < 3:
             self.matching_rules = rule_matchers_v2(rules)
         else:
             self.matching_rules = rule_matchers_v3(rules)
@@ -225,7 +226,7 @@ class ResponseVerifier:
 
     def log_context(self):
         log.debug(
-            f'Verifying v{self.pact.semver["major"]} Response: status={self.status}, '
+            f"Verifying v{self.pact.semver.major} Response: status={self.status}, "
             f"headers={rules_present(self.headers)}, body={rules_present(self.body)}, "
             f'matching rules={"present" if self.matching_rules != {} else "absent"}'
         )
@@ -246,7 +247,7 @@ class ResponseVerifier:
                         continue
                     actual = response.headers[actual]
                     # In <v3 the header rules were under $.headers... but in v3 they're {'header': ...} ugh
-                    if self.pact.semver["major"] > 2:
+                    if self.pact.semver.major > 2:
                         rule_section = "header"
                     else:
                         rule_section = "headers"
@@ -318,8 +319,8 @@ class ResponseVerifier:
             return self.compare_list(data, path, spec)
         if fold_type(spec) is dict:
             return self.compare_dict(data, spec, path)
-        if not data == spec:
-            return self.result.fail(f"Element mismatch {data!r} != {spec!r}", path)
+        if data != spec:
+            return self.result.fail(f"Element mismatch {data!r} is not expected {spec!r}", path)
         return True
 
     def compare_list(self, data, path, spec):
@@ -386,8 +387,11 @@ class ResponseVerifier:
                 return self.compare_header(data, spec, path)
             else:
                 # in the absence of a rule, and we're at a leaf, we fall back on equality
-                log.debug("... falling back on equality matching")
-                return data == spec
+                log.debug("... falling back on equality matching {data} vs {spec}")
+                if data != spec:
+                    return self.result.fail(
+                        f"Element mismatch {data!r} is not expected {spec!r}", path
+                    )
         return True
 
     def find_rule(self, path):
@@ -397,7 +401,7 @@ class ResponseVerifier:
         if not section_rules:
             return None
         log.debug(f"find_rule got {section_rules} for section {section}")
-        if self.pact.semver["major"] > 2:
+        if self.pact.semver.major > 2:
             # version 3 rules paths don't include the interaction section ("body", "headers", ...)
             path = path[1:]
             if section == "body":
@@ -489,7 +493,7 @@ class RequestVerifier(ResponseVerifier):
 
     def log_context(self):
         log.debug(
-            f'Verifying v{self.pact.semver["major"]} Request: method={self.method}, '
+            f"Verifying v{self.pact.semver.major} Request: method={self.method}, "
             f"path={rules_present(self.path)}, query={rules_present(self.query)}, "
             f"headers={rules_present(self.headers)}, body={rules_present(self.body)}, "
             f'matching rules={"present" if self.matching_rules != {} else "absent"}'
@@ -501,7 +505,7 @@ class RequestVerifier(ResponseVerifier):
                 f"Request method {request.method!r} does not match expected {self.method!r}"
             )
         if self.path is not MISSING:
-            if self.pact.semver["major"] > 1 and self.matching_rules.get("path"):
+            if self.pact.semver.major > 1 and self.matching_rules.get("path"):
                 return self.apply_rules(request.path, self.path, ["path"])
             if request.path != self.path:
                 return self.result.fail(
@@ -518,7 +522,7 @@ class RequestVerifier(ResponseVerifier):
         request_query = request.query
         if isinstance(request_query, str):
             request_query = parse_qs(request_query)
-        if self.pact.semver["major"] > 1 and self.matching_rules.get("query"):
+        if self.pact.semver.major > 1 and self.matching_rules.get("query"):
             if not self.apply_rules(request_query, spec_query, ["query"]):
                 return self.result.fail(
                     f"Request query params {request_query} do not match " f"expected {spec_query}"

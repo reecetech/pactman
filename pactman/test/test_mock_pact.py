@@ -1,9 +1,9 @@
 import os
 import tempfile
-import requests
 from unittest import TestCase
 from unittest.mock import call, patch
 
+import requests
 from pactman.mock.consumer import Consumer
 from pactman.mock.pact import Pact
 from pactman.mock.provider import Provider

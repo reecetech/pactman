@@ -1,6 +1,5 @@
 import pytest
 import requests
-
 from pactman import Pact, Term
 
 

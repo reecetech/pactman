@@ -1,6 +1,5 @@
 import pytest
-
-from pactman import SomethingLike, Like
+from pactman import Like, SomethingLike
 from pactman.mock.matchers import Matcher, Term
 
 

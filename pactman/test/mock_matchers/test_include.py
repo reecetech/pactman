@@ -1,7 +1,6 @@
 import pytest
 import requests
-
-from pactman import Consumer, Provider, Like, Includes
+from pactman import Consumer, Includes, Like, Provider
 
 
 def test_valid_types():
