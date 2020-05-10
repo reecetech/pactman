@@ -3,13 +3,14 @@ import pathlib
 from itertools import chain
 from unittest.mock import Mock
 
-import requests
-
 import pytest
+import requests
 import semver
-from pactman.verifier.broker_pact import BrokerPact, BrokerPacts, pact_id, PactBrokerConfig
+from pactman.verifier.broker_pact import (BrokerPact, BrokerPacts,
+                                          PactBrokerConfig, pact_id)
 from pactman.verifier.result import Result
-from pactman.verifier.verify import Interaction, RequestVerifier, ResponseVerifier
+from pactman.verifier.verify import (Interaction, RequestVerifier,
+                                     ResponseVerifier)
 from restnavigator import Navigator
 
 BASE_DIR = pathlib.Path(__file__).absolute().parents[0]
@@ -49,7 +50,7 @@ def mock_pact():
             provider="SpamProvider",
             consumer="SpamConsumer",
             version=version,
-            semver=semver.parse(version),
+            semver=semver.VersionInfo.parse(version),
         )
 
     return create_mock
@@ -378,6 +379,21 @@ def test_RequestVerifier_reports_correct_message_when_key_missing(mock_pact, int
     r = RequestVerifier(mock_pact("2.0.0"), interaction, mock_result)
     r.verify(FakeRequest({"body": {}}))
     mock_result.fail.assert_called_with("Request element 'key1' is missing", ["body"])
+
+
+def test_bug85_exact_alongside_type_match_fails(mock_pact):
+    # odd bug where an exact match inside a container with a typed match rule
+    # would not invoke fail()
+    mock_result = Mock()
+    r = ResponseVerifier(
+        mock_pact("2.0.0"),
+        {"body": {"id": "spam"}, "matchingRules": {"$.body.token": {"match": "type"}}},
+        mock_result,
+    )
+    r.verify(FakeResponse({"body": {"id": "ham"}}))
+    mock_result.fail.assert_called_with(
+        "Element mismatch 'ham' is not expected 'spam'", ["body", "id"]
+    )
 
 
 def test_ResponseVerifier_checks_for_missing_headers(mock_pact):

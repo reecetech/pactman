@@ -1,6 +1,5 @@
 from pactman.verifier.broker_pact import PactBrokerConfig
 
-
 # NOTE: this code is a WIP, it's not used yet
 
 

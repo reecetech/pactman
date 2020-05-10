@@ -1,7 +1,6 @@
 import pytest
 import requests
-
-from pactman import Equals, Consumer, Provider, Like
+from pactman import Consumer, Equals, Like, Provider
 
 
 @pytest.mark.parametrize("object", [None, list(), dict(), 1, 1.0, "string"])

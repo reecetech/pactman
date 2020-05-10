@@ -1,5 +1,4 @@
 import pytest
-
 from pactman import Consumer, Like, Provider, Term
 from pactman.mock.request import Request
 

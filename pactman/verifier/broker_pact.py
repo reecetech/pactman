@@ -115,7 +115,7 @@ class BrokerPact:
             self.version = self.metadata["pactSpecification"]["version"]
         else:
             self.version = self.metadata["pact-specification"]["version"]
-        self.semver = semver.parse(self.version)
+        self.semver = semver.VersionInfo.parse(self.version)
         self.interactions = [
             Interaction(self, interaction, result_factory) for interaction in pact["interactions"]
         ]

@@ -1,5 +1,4 @@
 import pytest
-
 from pactman import Consumer, Provider
 
 

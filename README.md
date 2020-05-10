@@ -594,6 +594,13 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
 
+2.28.0
+
+- Fixed edge case where `fail()` was not being invoked in an exact match
+  causing the pytest reporter to not know there'd been a failure
+- Address deprecation of `semver.parse` in semver
+- Dropped Python 3.6 testing, added Python 3.8 testing
+
 2.27.0
 
 - Fix typo in pytest plugin preventing `--pact-verify-consumer-tag` from working

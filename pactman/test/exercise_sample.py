@@ -4,11 +4,9 @@ import sys
 from unittest.mock import Mock
 
 import semver
-
 from pactman.test.test_verifier import FakeResponse
 from pactman.verifier.result import LoggedResult
 from pactman.verifier.verify import ResponseVerifier
-
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -24,6 +22,6 @@ with open(sys.argv[2]) as file:
         provider="SpamProvider",
         consumer="SpamConsumer",
         version=version,
-        semver=semver.parse(version),
+        semver=semver.VersionInfo.parse(version),
     )
     verifier(pact, case["expected"], result).verify(response(case["actual"]))

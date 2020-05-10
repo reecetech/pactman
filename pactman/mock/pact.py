@@ -115,7 +115,7 @@ class Pact(object):
         self.sslcert = sslcert
         self.sslkey = sslkey
         self.version = version
-        self.semver = semver.parse(self.version)
+        self.semver = semver.VersionInfo.parse(self.version)
         self.use_mocking_server = use_mocking_server
         self._interactions = []
         self._mock_handler = None
@@ -196,7 +196,7 @@ class Pact(object):
             self._interactions.insert(0, {})
             return self
 
-        if self.semver["major"] < 3:
+        if self.semver.major < 3:
             provider_state_key = "providerState"
             if not isinstance(provider_state, str):
                 raise ValueError("pact v2 provider states must be strings")
@@ -223,7 +223,7 @@ class Pact(object):
         :type provider_state: string or list as above
         :rtype: Pact
         """
-        if self.semver["major"] < 3:
+        if self.semver.major < 3:
             raise ValueError("pact v2 only allows a single provider state")
         elif not self._interactions:
             raise ValueError("only invoke and_given() after given()")

@@ -1,4 +1,5 @@
 import logging
+
 from colorama import Fore, Style
 
 from .paths import format_path
@@ -60,6 +61,8 @@ class PytestResult(Result):  # pragma: no cover
 
         __tracebackhide__ = True
         self.success = self.FAIL
+        if path:
+            message += " at " + format_path(path)
         log.error(message)
         raise Failed(message) from None
 

@@ -1,20 +1,17 @@
 import json
 import os
 import tempfile
-
-import requests
 from unittest.mock import Mock, mock_open, patch
 
 import pactman.mock.pact
 import pytest
+import requests
 import semver
 from pactman.mock.consumer import Consumer
 from pactman.mock.pact import Pact
-from pactman.mock.pact_request_handler import (
-    PactRequestHandler,
-    PactVersionConflict,
-    PactInteractionMismatch,
-)
+from pactman.mock.pact_request_handler import (PactInteractionMismatch,
+                                               PactRequestHandler,
+                                               PactVersionConflict)
 from pactman.mock.provider import Provider
 
 
@@ -48,7 +45,7 @@ def test_pact_init(monkeypatch, file_write_mode, mock_pact):
     assert mock_pact.provider.name == "PROVIDER"
     assert mock_pact.log_dir == "/tmp/a"
     assert mock_pact.version == "2.0.0"
-    assert mock_pact.semver == semver.parse("2.0.0")
+    assert mock_pact.semver == semver.VersionInfo.parse("2.0.0")
     mock_pact.allocate_port.assert_called_once_with()
     assert mock_pact.BASE_PORT_NUMBER >= 8150
     pactman.mock.pact.ensure_pact_dir.assert_called_once_with("/tmp/pact")
@@ -95,7 +92,7 @@ def generate_pact(version):
 def test_pact_request_handler_write_pact(mock_open, monkeypatch, mock_pact, version):
     monkeypatch.setattr(pactman.mock.pact, "ensure_pact_dir", Mock(return_value=True))
     mock_pact = mock_pact(version=version)
-    mock_pact.semver = semver.parse(version)
+    mock_pact.semver = semver.VersionInfo.parse(version)
     my_pact = PactRequestHandler(mock_pact)
     os.path.exists.return_value = False
     with patch("json.dump", Mock()) as json_mock:
@@ -112,13 +109,13 @@ def test_versions_are_consistent(mock_open, monkeypatch, mock_pact):
 
     # write the v2 pact
     pact = mock_pact()
-    pact.semver = semver.parse(pact.version)
+    pact.semver = semver.VersionInfo.parse(pact.version)
     hdlr = PactRequestHandler(pact)
     hdlr.write_pact(dict(description="spam"))
 
     # try to add the v3 pact
     pact = mock_pact(version="3.0.0")
-    pact.semver = semver.parse(pact.version)
+    pact.semver = semver.VersionInfo.parse(pact.version)
     hdlr = PactRequestHandler(pact)
     with pytest.raises(PactVersionConflict):
         hdlr.write_pact(dict(description="spam"))
