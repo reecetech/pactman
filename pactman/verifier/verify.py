@@ -103,7 +103,16 @@ class Interaction:
         return self.response.verify(r)
 
     def service_DELETE(self, service_url):
-        r = requests.delete(self._get_url(service_url), headers=self._request_headers)
+        if "query" in self.request:
+            query = self.request["query"]
+            if isinstance(query, str):
+                # version 2 spec used strings, version 3 uses objects
+                query = parse_qs(query)
+            r = requests.delete(
+                self._get_url(service_url), params=query, headers=self._request_headers
+            )
+        else:
+            r = requests.delete(self._get_url(service_url), headers=self._request_headers)
         return self.response.verify(r)
 
     def service_PUT(self, service_url):
