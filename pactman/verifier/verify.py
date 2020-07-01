@@ -137,7 +137,7 @@ class Interaction:
 
     def set_provider_state(self, provider_setup):
         if self.providerState is not None:
-            log.debug(f"Setting up provider state {self.providerState!r}")
+            log.debug("Setting up provider state {self.providerState!r}")
             provider_setup(self.providerState)
             return
         if self.providerStates is None:
