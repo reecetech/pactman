@@ -73,6 +73,10 @@ def get_broker_url(config):
     return config.getoption("pact_broker_url") or os.environ.get("PACT_BROKER_URL")
 
 
+def get_provider_name(config):
+    return config.getoption("pact_provider_name") or os.environ.get("PACT_PROVIDER_NAME")
+
+
 # add the pact broker URL to the pytest output if running verbose
 def pytest_report_header(config):
     if config.getoption("verbose") > 0:
@@ -139,7 +143,7 @@ def pytest_generate_tests(metafunc):
                 "pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True
             )
         else:
-            provider_name = metafunc.config.getoption("pact_provider_name")
+            provider_name = get_provider_name(metafunc.config)
             if not provider_name:
                 raise ValueError("--pact-broker-url requires the --pact-provider-name option")
             broker = PactBrokerConfig(
