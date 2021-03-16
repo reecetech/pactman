@@ -25,7 +25,7 @@ def pytest_addoption(parser):
         "--pact-consumer-name",
         default=None,
         help="consumer name to limit pact verification to - "
-        "DEPRECATED, use --pact-verify-consumer instead",
+             "DEPRECATED, use --pact-verify-consumer instead",
     )
     group.addoption(
         "--pact-verify-consumer", default=None, help="consumer name to limit pact verification to"
@@ -35,8 +35,8 @@ def pytest_addoption(parser):
         metavar="TAG",
         action="append",
         help="limit broker pacts verified to those matching the tag. May be "
-        "specified multiple times in which case pacts matching any of these "
-        "tags will be verified.",
+             "specified multiple times in which case pacts matching any of these "
+             "tags will be verified.",
     )
     group.addoption(
         "--pact-publish-results",
@@ -116,10 +116,8 @@ def flatten_pacts(pacts):
                 yield (interaction, None)
 
 
-def get_pact_files(file_location):
-    if not file_location:
-        return []
-    for filename in glob.glob(file_location, recursive=True):
+def load_pact_files(file_location):
+    for filename in glob.glob(file_location,  recursive=True):
         yield BrokerPact.load_file(filename, result_factory=PytestResult)
 
 
@@ -132,9 +130,10 @@ def pytest_generate_tests(metafunc):
     if "pact_verifier" in metafunc.fixturenames:
         broker_url = get_broker_url(metafunc.config)
         if not broker_url:
-            pact_files = get_pact_files(metafunc.config.getoption("pact_files"))
-            if not pact_files:
+            pact_files_location = metafunc.config.getoption("pact_files")
+            if not pact_files_location:
                 raise ValueError("need a --pact-broker-url or --pact-files option")
+            pact_files = load_pact_files(pact_files_location)
             metafunc.parametrize(
                 "pact_verifier", flatten_pacts(pact_files), ids=test_id, indirect=True
             )
