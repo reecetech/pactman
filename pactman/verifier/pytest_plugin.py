@@ -119,7 +119,7 @@ def flatten_pacts(pacts):
 def get_pact_files(file_location):
     if not file_location:
         return []
-    for filename in glob.glob(file_location):
+    for filename in glob.glob(file_location, recursive=True):
         yield BrokerPact.load_file(filename, result_factory=PytestResult)
 
 

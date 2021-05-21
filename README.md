@@ -540,7 +540,7 @@ requires a bearer token you may provide it with `--pact-broker-token=<TOKEN>` or
 environment variable.
 
 `--pact-files=<file pattern>` verifies some on-disk pact JSON files identified by the wildcard pattern
-(unix glob pattern matching).
+(unix glob pattern matching, use `**` to match multiple directories).
 
 If you pulled the pacts from a broker and wish to publish verification results, use `--pact-publish-results`
 to turn on publishing the results. This option also requires you to specify `--pact-provider-version=<version>`.
