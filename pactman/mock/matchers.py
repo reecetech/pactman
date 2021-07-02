@@ -383,9 +383,9 @@ def get_matching_rules_v2(input, path):  # noqa: C901
     if isinstance(input, TERM_CLASSES):
         return {path: {"regex": input.matcher}}
     if isinstance(input, Equals):
-        raise Equals.NotAllowed(f"Equals() cannot be used in pact version 2")
+        raise Equals.NotAllowed("Equals() cannot be used in pact version 2")
     if isinstance(input, Includes):
-        raise Includes.NotAllowed(f"Includes() cannot be used in pact version 2")
+        raise Includes.NotAllowed("Includes() cannot be used in pact version 2")
 
     raise ValueError("Unknown type: %s" % type(input))
 

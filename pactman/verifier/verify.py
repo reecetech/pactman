@@ -132,7 +132,7 @@ class Interaction:
             provider_setup(self.providerState)
             return
         if self.providerStates is None:
-            log.debug(f"No provider state specified!")
+            log.debug("No provider state specified!")
             return
         for state in self.providerStates:
             if "name" not in state:
@@ -539,7 +539,7 @@ class RequestVerifier(ResponseVerifier):
         # check for unexpected data in the request
         for k in data:
             if k not in spec:
-                return self.result.fail(f"Unexpected data in request", path + [k])
+                return self.result.fail("Unexpected data in request", path + [k])
         return True
 
 
