@@ -539,7 +539,7 @@ class RequestVerifier(ResponseVerifier):
         # check for unexpected data in the request
         for k in data:
             if k not in spec:
-                return self.result.fail("Unexpected data in request", path + [k])
+                return self.result.fail(f"Unexpected data in request {path + [k]}")
         return True
 
 
