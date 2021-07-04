@@ -18,7 +18,7 @@ setup(
     name="pactman",
     version=about["__version__"],
     description=(
-        "Tools for creating and verifying consumer driven contracts" " using the Pact framework."
+        "Tools for creating and verifying consumer driven contracts using the Pact framework."
     ),
     long_description=read("README.md"),
     long_description_content_type="text/markdown",

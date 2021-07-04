@@ -594,6 +594,10 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
 
+2.29.0
+
+- Added support for `**` recursive globbing with `--pact-files`, thanks @maksimt
+
 2.28.0
 
 - Fixed edge case where `fail()` was not being invoked in an exact match
