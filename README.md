@@ -533,7 +533,12 @@ Once you have written the pytest code, you need to invoke pytest with additional
 
 `--pact-broker-url=<URL>` provides the base URL of the Pact broker to retrieve pacts from for the
 provider. You must also provide `--pact-provider-name=<ProviderName>` to identify which provider to
-retrieve pacts for from the broker. You may provider `--pact-verify-consumer=<ConsumerName>` to limit
+retrieve pacts for from the broker.
+
+The broker URL and provider name may alternatively be provided through the environment variables
+`PACT_BROKER_URL` and `PACT_PROVIDER_NAME`.
+
+You may provide `--pact-verify-consumer=<ConsumerName>` to limit
 the pacts verified to just that consumer. As with the command-line verifier, you may provide basic
 auth details in the broker URL, or through the `PACT_BROKER_AUTH` environment variable. If your broker
 requires a bearer token you may provide it with `--pact-broker-token=<TOKEN>` or the `PACT_BROKER_TOKEN`
@@ -593,6 +598,12 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 3.0.0 (FUTURE, DEPRECATION WARNINGS)
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
+
+2.30.0
+
+- DELETE requests may now have query strings, thanks @MazeDeveloper
+- Nicer feedback if no pact source is specified on command line, thanks @artamonovkirill
+- Add PACT_PROVIDER_NAME to environment vars, thanks @artamonovkirill
 
 2.29.0
 
