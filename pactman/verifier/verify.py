@@ -103,7 +103,16 @@ class Interaction:
         return self.response.verify(r)
 
     def service_DELETE(self, service_url):
-        r = requests.delete(self._get_url(service_url), headers=self._request_headers)
+        if "query" in self.request:
+            query = self.request["query"]
+            if isinstance(query, str):
+                # version 2 spec used strings, version 3 uses objects
+                query = parse_qs(query)
+            r = requests.delete(
+                self._get_url(service_url), params=query, headers=self._request_headers
+            )
+        else:
+            r = requests.delete(self._get_url(service_url), headers=self._request_headers)
         return self.response.verify(r)
 
     def service_PUT(self, service_url):
@@ -128,7 +137,7 @@ class Interaction:
 
     def set_provider_state(self, provider_setup):
         if self.providerState is not None:
-            log.debug(f"Setting up provider state {self.providerState!r}")
+            log.debug("Setting up provider state {self.providerState!r}")
             provider_setup(self.providerState)
             return
         if self.providerStates is None:
@@ -539,7 +548,7 @@ class RequestVerifier(ResponseVerifier):
         # check for unexpected data in the request
         for k in data:
             if k not in spec:
-                return self.result.fail(f"Unexpected data in request {path + [k]}")
+                return self.result.fail("Unexpected data in request", path + [k])
         return True
 
 

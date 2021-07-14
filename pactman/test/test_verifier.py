@@ -219,6 +219,23 @@ def test_interaction_verify_delete(monkeypatch, mock_pact, mock_result_factory):
     i.response.verify.assert_called()
 
 
+def test_interaction_verify_delete_qs(monkeypatch, mock_pact, mock_result_factory):
+    monkeypatch.setattr(requests, "delete", Mock())
+    monkeypatch.setattr(ResponseVerifier, "verify", Mock())
+    fake_interaction = {
+        "description": "dummy",
+        "request": {"method": "DELETE", "path": "/diary-notes/diary-note/1", "query": "a=b&c=d"},
+        "response": {"headers": {}, "status": 200},
+    }
+    i = Interaction(mock_pact("2.0.0"), fake_interaction, mock_result_factory)
+    i.verify("http://provider.example/", "http://provider.example/pact-setup/")
+
+    requests.delete.assert_called_with(
+        "http://provider.example/diary-notes/diary-note/1", params=dict(a=["b"], c=["d"]), headers={}
+    )
+    i.response.verify.assert_called()
+
+
 def test_interaction_verify_put(monkeypatch, mock_pact, mock_result_factory, fake_interaction):
     monkeypatch.setattr(requests, "put", Mock())
     monkeypatch.setattr(requests, "get", Mock())
