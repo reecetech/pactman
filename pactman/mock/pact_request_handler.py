@@ -2,6 +2,7 @@ import json
 import os
 import os.path
 import urllib.parse
+import re
 
 from ..verifier.parse_header import get_header_param
 from ..verifier.result import Result
@@ -89,10 +90,12 @@ class PactRequestHandler:
     def handle_response_encoding(self, response, headers):
         # default to content-type to json
         # rfc4627 states JSON is Unicode and defaults to UTF-8
+        json_type = re.compile(r"application/(json|.*\+json|json\-.*)(;|$)")
+
         content_type = [headers[h] for h in headers if h.lower() == "content-type"]
         if content_type:
             content_type = content_type[0]
-            if "application/json" not in content_type:
+            if not json_type.match(content_type):
                 return response["body"]
             charset = get_header_param(content_type, "charset")
             if not charset:
