@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  pactman-dev:
+    build:
+      context: lib
+    container_name: pactman-dev
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./lib:/code
+      - ./lib/.dev-container-history:/root/.history

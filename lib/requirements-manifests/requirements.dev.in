@@ -1,0 +1,7 @@
+pytest==7.4.2
+semver==3.0.2
+colorama==0.4.6
+requests==2.31.0
+restnavigator==1.0.1
+pytest-mock==3.3.1
+pytest-watch==4.2.0

@@ -1,0 +1,9 @@
+configparser
+codecov
+coverage
+mccabe
+pytest
+pytest-flake8
+pytest-mock
+pydocstyle
+wheel
