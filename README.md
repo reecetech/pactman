@@ -599,6 +599,10 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
 
+2.31.0
+
+- Accept short pact versions (e.g. 4.0), as well as strict semantic versions
+
 2.30.0
 
 - DELETE requests may now have query strings, thanks @MazeDeveloper
