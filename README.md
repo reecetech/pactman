@@ -601,7 +601,8 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 2.31.0
 
-- Accept short pact versions (e.g. 4.0), as well as strict semantic versions
+- Fix bug where a Pact specification version of 4.0 in the broker metadata
+  could not be parsed as a semantic version
 
 2.30.0
 
