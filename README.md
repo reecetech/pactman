@@ -599,6 +599,11 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md)
 
 - remove DEPRECATED `--pact-consumer-name` command-line option
 
+2.31.0
+
+- Fix bug where a Pact specification version of 4.0 in the broker metadata
+  could not be parsed as a semantic version
+
 2.30.0
 
 - DELETE requests may now have query strings, thanks @MazeDeveloper
