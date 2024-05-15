@@ -2,7 +2,7 @@ import logging
 import queue
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, SimpleQueue
 
 from .pact_request_handler import PactRequestHandler
 
@@ -23,8 +23,10 @@ class Server:
         self.pact = pact
         self.interactions = Queue()
         self.results = Queue()
-        self.process = Process(target=run_server, args=(pact, self.interactions, self.results))
+        notify_start = SimpleQueue()
+        self.process = Process(target=run_server, args=(pact, self.interactions, self.results, notify_start))
         self.process.start()
+        notify_start.get()
 
     def setup(self, interactions):
         for interaction in interactions:
@@ -42,16 +44,17 @@ class Server:
         self.process.terminate()
 
 
-def run_server(pact, interactions, results):
-    httpd = MockServer(pact, interactions, results)
+def run_server(pact, interactions, results, notify_start):
+    httpd = MockServer(pact, interactions, results, notify_start)
     httpd.serve_forever()
 
 
 class MockServer(HTTPServer):
-    def __init__(self, pact, interactions, results):
+    def __init__(self, pact, interactions, results, notify_start):
         self.pact = pact
         self.incoming_interactions = interactions
         self.outgoing_results = results
+        self.notify_start = notify_start
         server_address = ("", pact.port)
         super().__init__(server_address, MockHTTPRequestHandler)
         self.interactions = []
@@ -59,6 +62,11 @@ class MockServer(HTTPServer):
         self.log.addHandler(logging.FileHandler(f"{pact.log_dir}/{pact.provider.name}.log"))
         self.log.setLevel(logging.DEBUG)
         self.log.propagate = False
+
+    def server_activate(self):
+        super().server_activate()
+        self.notify_start.put(True)
+        del self.notify_start
 
     class Error(Exception):
         pass
