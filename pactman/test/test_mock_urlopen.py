@@ -46,6 +46,22 @@ def test_urlopen_responder_handles_json_body():
     assert r.headers["Content-Type"] == "application/json; charset=UTF-8"
 
 
+def test_urlopen_responder_handles_json_like_body():
+    h = MockURLOpenHandler(Mock())
+
+    interaction = dict(
+        response=dict(
+            body={"message": "hello world"}, 
+            status=200,
+            headers={"Content-Type":"application/geo+json"}
+        )
+    )
+    r = h.respond_for_interaction(interaction)
+
+    assert r.data == b'{"message": "hello world"}'
+    assert r.headers["Content-Type"] == "application/geo+json"
+
+
 def test_urlopen_responder_handles_json_string_body():
     h = MockURLOpenHandler(Mock())
 
