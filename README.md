@@ -110,7 +110,7 @@ class GetUserInfoContract(unittest.TestCase):
         'a request for UserA'
     ).with_request(
         'GET', '/users/UserA'
-    ) .will_respond_with(200, body=expected)
+    ).will_respond_with(200, body=expected)
 
     with pact:
       result = get_user('UserA')
