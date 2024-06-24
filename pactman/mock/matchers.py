@@ -308,7 +308,7 @@ try:
     LIKE_CLASSES = (Like, pact_python.Like)
     EACHLIKE_CLASSES = (EachLike, pact_python.EachLike)
     TERM_CLASSES = (Term, pact_python.Term)
-except ImportError:
+except (AttributeError, ImportError):
     pact_python = None
     LIKE_CLASSES = (Like,)
     EACHLIKE_CLASSES = (EachLike,)
